@@ -1,118 +1,147 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { MapPin, Calendar, MessageCircle, Clock, Users, Star } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { MapPin, Calendar, MessageCircle, User, ArrowRight } from 'lucide-react'
+import { useAuthAPI } from '../hooks/useAuthAPI'
 
 export default function HomePage() {
-  const { user } = useAuth()
+  const { user } = useAuthAPI()
 
-  const buses = [
+  const quickActions = [
     {
-      id: 'bus-001',
-      route: 'Downtown Express',
-      nextStop: 'Central Station',
-      eta: '5 min',
-      capacity: '32/45',
-      rating: 4.8,
+      title: 'Track Bus',
+      description: 'Real-time bus locations',
+      icon: MapPin,
+      path: '/tracker',
+      color: 'from-blue-500 to-blue-600',
     },
     {
-      id: 'bus-002',
-      route: 'University Line',
-      nextStop: 'Campus Gate',
-      eta: '12 min',
-      capacity: '28/40',
-      rating: 4.6,
+      title: 'Book Trip',
+      description: 'Reserve your seat',
+      icon: Calendar,
+      path: user ? '/booking' : '/auth',
+      color: 'from-pink-500 to-pink-600',
+      requiresAuth: true,
     },
     {
-      id: 'bus-003',
-      route: 'Airport Shuttle',
-      nextStop: 'Terminal 1',
-      eta: '8 min',
-      capacity: '15/30',
-      rating: 4.9,
+      title: 'Send Feedback',
+      description: 'Share your experience',
+      icon: MessageCircle,
+      path: user ? '/feedback' : '/auth',
+      color: 'from-green-500 to-green-600',
+      requiresAuth: true,
+    },
+    {
+      title: 'View Profile',
+      description: 'Your account details',
+      icon: User,
+      path: user ? '/profile' : '/auth',
+      color: 'from-purple-500 to-purple-600',
+      requiresAuth: true,
     },
   ]
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
       {/* Header */}
-      <div className="mb-8">
+      <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Welcome{user ? `, ${user.email?.split('@')[0]}` : ''}! 👋
+          Welcome to Bus Tracker
         </h1>
-        <p className="text-gray-600">Track your buses in real-time</p>
+        <p className="text-gray-600">
+          {user ? (
+            <>
+              Hello, {user.profile?.fullName || user.username || user.email?.split('@')[0]}! 
+              Track your buses and manage your trips.
+            </>
+          ) : (
+            'Track buses in real-time and book your trips with ease.'
+          )}
+        </p>
       </div>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-pink-400 to-pink-300 rounded-3xl p-6 mb-8 text-white shadow-lg">
-        <h2 className="text-2xl font-bold mb-2">Smart Bus Tracking</h2>
-        <p className="text-pink-100 mb-4">Never miss your bus again with real-time updates</p>
-        <Link
-          to="/tracker"
-          className="inline-flex items-center bg-white text-pink-600 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
-        >
-          <MapPin size={18} className="mr-2" />
-          Track Now
-        </Link>
-      </div>
+      {/* Debug Section - Remove this in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+          <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
+          <div className="text-sm text-yellow-700 space-y-1">
+            <div>User: {user ? 'Logged in' : 'Not logged in'}</div>
+            <div>Token: {localStorage.getItem('auth_token') ? 'Exists' : 'None'}</div>
+            {user && (
+              <>
+                <div>Email: {user.email}</div>
+                <div>Username: {user.username}</div>
+                <div>Role: {user.role}</div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Get Started Section - Only show if not logged in */}
+      {!user && (
+        <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-6 text-white mb-8">
+          <h2 className="text-xl font-bold mb-2">Get Started</h2>
+          <p className="mb-4 opacity-90">
+            Sign in to access booking, feedback, and profile features.
+          </p>
+          <Link
+            to="/auth"
+            className="inline-flex items-center bg-white text-pink-600 px-4 py-2 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200"
+          >
+            Sign In
+            <ArrowRight size={16} className="ml-2" />
+          </Link>
+        </div>
+      )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <Link
-          to="/tracker"
-          className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-sm border border-pink-100 hover:shadow-md hover:scale-105 transition-all duration-200"
-        >
-          <MapPin className="text-pink-500 mb-2" size={24} />
-          <span className="text-sm font-medium text-gray-700">Track</span>
-        </Link>
-        <Link
-          to="/booking"
-          className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-sm border border-pink-100 hover:shadow-md hover:scale-105 transition-all duration-200"
-        >
-          <Calendar className="text-pink-500 mb-2" size={24} />
-          <span className="text-sm font-medium text-gray-700">Book</span>
-        </Link>
-        <Link
-          to="/feedback"
-          className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-sm border border-pink-100 hover:shadow-md hover:scale-105 transition-all duration-200"
-        >
-          <MessageCircle className="text-pink-500 mb-2" size={24} />
-          <span className="text-sm font-medium text-gray-700">Review</span>
-        </Link>
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        {quickActions.map((action) => {
+          const Icon = action.icon
+          const isDisabled = action.requiresAuth && !user
+          
+          return (
+            <Link
+              key={action.title}
+              to={action.path}
+              className={`block p-6 rounded-2xl bg-gradient-to-br ${action.color} text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ${
+                isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={(e) => {
+                if (isDisabled) {
+                  e.preventDefault()
+                }
+              }}
+            >
+              <Icon size={24} className="mb-3" />
+              <h3 className="font-semibold mb-1">{action.title}</h3>
+              <p className="text-sm opacity-90">{action.description}</p>
+            </Link>
+          )
+        })}
       </div>
 
-      {/* Available Buses */}
-      <div className="mb-8">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Available Buses</h3>
-        <div className="space-y-4">
-          {buses.map((bus) => (
-            <Link
-              key={bus.id}
-              to={`/tracker/${bus.id}`}
-              className="block bg-white rounded-2xl p-5 shadow-sm border border-pink-100 hover:shadow-md hover:scale-[1.02] transition-all duration-200"
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h4 className="font-bold text-gray-800 text-lg">{bus.route}</h4>
-                  <p className="text-gray-600 text-sm">Next: {bus.nextStop}</p>
-                </div>
-                <div className="flex items-center bg-pink-50 px-3 py-1 rounded-full">
-                  <Clock size={14} className="text-pink-600 mr-1" />
-                  <span className="text-pink-600 font-semibold text-sm">{bus.eta}</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center text-gray-600">
-                  <Users size={16} className="mr-1" />
-                  <span className="text-sm">{bus.capacity}</span>
-                </div>
-                <div className="flex items-center">
-                  <Star size={16} className="text-yellow-500 mr-1 fill-current" />
-                  <span className="text-sm font-medium text-gray-700">{bus.rating}</span>
-                </div>
-              </div>
-            </Link>
-          ))}
+      {/* Features */}
+      <div className="space-y-4">
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Real-time Tracking</h3>
+          <p className="text-gray-600">
+            Get live updates on bus locations and arrival times.
+          </p>
+        </div>
+        
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Easy Booking</h3>
+          <p className="text-gray-600">
+            Reserve your seat in advance with our simple booking system.
+          </p>
+        </div>
+        
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">User Feedback</h3>
+          <p className="text-gray-600">
+            Help us improve by sharing your experience and suggestions.
+          </p>
         </div>
       </div>
     </div>

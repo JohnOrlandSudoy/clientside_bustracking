@@ -1,20 +1,128 @@
-import React, { useState } from 'react'
-import { Calendar, MapPin, Users, CreditCard, Check } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Calendar, MapPin, Users, CreditCard, Check, AlertCircle, Clock } from 'lucide-react'
+import { useAuthAPI } from '../hooks/useAuthAPI'
+import { authAPI, BusETA } from '../lib/api'
+
+interface Bus {
+  id: string
+  bus_number: string
+  available_seats: number
+  total_seats: number
+  route_id: string
+  eta?: string
+  currentLocation?: { lat: number; lng: number } | null
+  route_name?: string
+}
+
+interface Booking {
+  id: string
+  user_id: string
+  bus_id: string
+  status: string
+  created_at: string
+}
 
 export default function BookingPage() {
-  const { user } = useAuth()
-  const [selectedBus, setSelectedBus] = useState('')
+  const { user } = useAuthAPI()
+  const [searchParams] = useSearchParams()
+  const [selectedBus, setSelectedBus] = useState(searchParams.get('busId') || '')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedSeats, setSelectedSeats] = useState<number[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(false)
+  const [error, setError] = useState('')
+  const [buses, setBuses] = useState<Bus[]>([])
+  const [loadingBuses, setLoadingBuses] = useState(true)
+  const [bookingData, setBookingData] = useState<Booking | null>(null)
 
-  const buses = [
-    { id: 'bus-001', route: 'Downtown Express', price: 15, availableSeats: 13 },
-    { id: 'bus-002', route: 'University Line', price: 12, availableSeats: 8 },
-    { id: 'bus-003', route: 'Airport Shuttle', price: 25, availableSeats: 15 },
-  ]
+  // Load buses and ETAs from API
+  useEffect(() => {
+    const loadBusesAndETAs = async () => {
+      try {
+        setLoadingBuses(true)
+        setError('')
+
+        // Fetch buses
+        let busResponse
+        try {
+          busResponse = await authAPI.getBuses()
+          if (!busResponse || !Array.isArray(busResponse)) {
+            throw new Error('Invalid bus response format')
+          }
+        } catch (busError) {
+          console.error('Failed to fetch buses:', busError)
+          throw new Error('Failed to fetch bus list')
+        }
+
+        // Fetch ETAs
+        let etaResponse
+        try {
+          etaResponse = await authAPI.getBusETA()
+          if (!etaResponse || !Array.isArray(etaResponse)) {
+            throw new Error('Invalid ETA response format')
+          }
+        } catch (etaError) {
+          console.error('Failed to fetch ETAs:', etaError)
+          throw new Error('Failed to fetch ETA data')
+        }
+
+        // Merge bus and ETA data
+        const mergedBuses = busResponse.map((bus: any) => {
+          const etaData = etaResponse.find((eta: BusETA) => eta.busId === bus.id)
+          return {
+            id: bus.id,
+            bus_number: bus.bus_number,
+            available_seats: bus.available_seats,
+            total_seats: bus.total_seats,
+            route_id: bus.route_id,
+            eta: etaData?.eta,
+            currentLocation: etaData?.currentLocation,
+            route_name: etaData?.route.name
+          }
+        })
+
+        setBuses(mergedBuses)
+
+        // Validate pre-selected busId
+        const busIdFromUrl = searchParams.get('busId')
+        if (busIdFromUrl && !mergedBuses.find(bus => bus.id === busIdFromUrl)) {
+          setError('Invalid bus selected. Please choose another bus.')
+          setSelectedBus('')
+        }
+      } catch (error) {
+        console.error('Failed to load buses or ETAs:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load bus information. Using fallback data.')
+        // Fallback to mock data
+        setBuses([
+          {
+            id: 'c7c715d0-8195-4308-af1c-78b88f150cf4',
+            bus_number: 'BUS001',
+            available_seats: 13,
+            total_seats: 20,
+            route_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            eta: '15 minutes',
+            currentLocation: { lat: 14.5995, lng: 120.9842 },
+            route_name: 'Downtown Express'
+          },
+          {
+            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            bus_number: 'BUS002',
+            available_seats: 8,
+            total_seats: 20,
+            route_id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210',
+            eta: '20 minutes',
+            currentLocation: { lat: 14.6000, lng: 120.9850 },
+            route_name: 'University Line'
+          }
+        ])
+      } finally {
+        setLoadingBuses(false)
+      }
+    }
+
+    loadBusesAndETAs()
+  }, [searchParams])
 
   const generateSeats = (totalSeats: number, availableSeats: number) => {
     const seats = []
@@ -41,23 +149,51 @@ export default function BookingPage() {
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedBus || !selectedDate || selectedSeats.length === 0) return
+    if (!selectedBus || !selectedDate || selectedSeats.length === 0 || !user) {
+      setError('Please select a bus, date, and at least one seat.')
+      return
+    }
 
     setIsSubmitting(true)
+    setError('')
 
     try {
-      // Simulate API call to book seats
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setBookingSuccess(true)
+      const bookingPromises = selectedSeats.map(async (seatNumber) => {
+        const bookingData = {
+          userId: user.id,
+          busId: selectedBus
+        }
+
+        console.log('Creating booking:', bookingData)
+        return await authAPI.createBooking(bookingData)
+      })
+
+      const bookingResults = await Promise.all(bookingPromises)
+      
+      console.log('Booking results:', bookingResults)
+      
+      const successfulBookings = bookingResults.filter(result => result && result.id)
+      
+      if (successfulBookings.length === selectedSeats.length) {
+        setBookingSuccess(true)
+        setBookingData(successfulBookings[0])
+      } else {
+        setError(`Failed to book ${selectedSeats.length - successfulBookings.length} seats. Please try again.`)
+      }
     } catch (error) {
       console.error('Booking failed:', error)
+      if (error instanceof Error) {
+        setError(`Booking failed: ${error.message}`)
+      } else {
+        setError('Booking failed. Please check your connection and try again.')
+      }
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const selectedBusData = buses.find(bus => bus.id === selectedBus)
-  const totalPrice = selectedBusData ? selectedBusData.price * selectedSeats.length : 0
+  const totalPrice = selectedBusData ? 15 * selectedSeats.length : 0
 
   if (bookingSuccess) {
     return (
@@ -74,8 +210,12 @@ export default function BookingPage() {
             <h3 className="font-semibold text-gray-800 mb-4">Booking Details</h3>
             <div className="space-y-2 text-left">
               <div className="flex justify-between">
+                <span className="text-gray-600">Booking ID:</span>
+                <span className="font-semibold">{bookingData?.id}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-600">Route:</span>
-                <span className="font-semibold">{selectedBusData?.route}</span>
+                <span className="font-semibold">{selectedBusData?.route_name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Date:</span>
@@ -84,6 +224,10 @@ export default function BookingPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">Seats:</span>
                 <span className="font-semibold">{selectedSeats.join(', ')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Status:</span>
+                <span className="font-semibold capitalize">{bookingData?.status}</span>
               </div>
               <div className="flex justify-between border-t pt-2">
                 <span className="text-gray-600">Total:</span>
@@ -97,6 +241,7 @@ export default function BookingPage() {
               setSelectedBus('')
               setSelectedDate('')
               setSelectedSeats([])
+              setBookingData(null)
             }}
             className="bg-gradient-to-r from-pink-500 to-pink-400 text-white px-8 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
           >
@@ -109,53 +254,77 @@ export default function BookingPage() {
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Book Your Trip</h1>
         <p className="text-gray-600">Reserve your seat in advance</p>
       </div>
 
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
+          <AlertCircle className="text-red-500 mr-3" size={20} />
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
       <form onSubmit={handleBooking} className="space-y-6">
-        {/* Bus Selection */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <MapPin className="mr-2 text-pink-500" size={20} />
             Select Route
           </h3>
-          <div className="space-y-3">
-            {buses.map((bus) => (
-              <label
-                key={bus.id}
-                className={`block p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                  selectedBus === bus.id
-                    ? 'border-pink-500 bg-pink-50'
-                    : 'border-gray-200 hover:border-pink-300'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="bus"
-                  value={bus.id}
-                  checked={selectedBus === bus.id}
-                  onChange={(e) => setSelectedBus(e.target.value)}
-                  className="sr-only"
-                />
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h4 className="font-semibold text-gray-800">{bus.route}</h4>
-                    <p className="text-sm text-gray-600">{bus.availableSeats} seats available</p>
+          {loadingBuses ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
+              <span className="ml-2 text-gray-600">Loading buses...</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {buses.map((bus) => (
+                <label
+                  key={bus.id}
+                  className={`block p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                    selectedBus === bus.id
+                      ? 'border-pink-500 bg-pink-50'
+                      : 'border-gray-200 hover:border-pink-300'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="bus"
+                    value={bus.id}
+                    checked={selectedBus === bus.id}
+                    onChange={(e) => setSelectedBus(e.target.value)}
+                    className="sr-only"
+                  />
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold text-gray-800">{bus.route_name || 'Unknown Route'}</h4>
+                      <p className="text-sm text-gray-600">
+                        {bus.eta ? `ETA: ${bus.eta}` : 'ETA: --'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {bus.currentLocation 
+                          ? `Current: Lat ${bus.currentLocation.lat}, Lng ${bus.currentLocation.lng}`
+                          : 'Location unavailable'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {bus.available_seats || 0} seats available
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-pink-600">$15</div>
+                      <div className="text-sm text-gray-600">per seat</div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        Bus: {bus.bus_number}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-pink-600">${bus.price}</div>
-                    <div className="text-sm text-gray-600">per seat</div>
-                  </div>
-                </div>
-              </label>
-            ))}
-          </div>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Date Selection */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Calendar className="mr-2 text-pink-500" size={20} />
@@ -171,7 +340,6 @@ export default function BookingPage() {
           />
         </div>
 
-        {/* Seat Selection */}
         {selectedBus && (
           <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -180,7 +348,7 @@ export default function BookingPage() {
             </h3>
             
             <div className="grid grid-cols-4 gap-3 mb-4">
-              {generateSeats(20, selectedBusData?.availableSeats || 0).map((seat) => (
+              {generateSeats(selectedBusData?.total_seats || 20, selectedBusData?.available_seats || 0).map((seat) => (
                 <button
                   key={seat.number}
                   type="button"
@@ -217,7 +385,6 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Booking Summary */}
         {selectedSeats.length > 0 && (
           <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-6 text-white shadow-lg">
             <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -227,7 +394,11 @@ export default function BookingPage() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Route:</span>
-                <span className="font-semibold">{selectedBusData?.route}</span>
+                <span className="font-semibold">{selectedBusData?.route_name || 'Unknown Route'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>ETA:</span>
+                <span className="font-semibold">{selectedBusData?.eta || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span>Seats:</span>
@@ -247,10 +418,9 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Submit Button */}
         <button
           type="submit"
-          disabled={!selectedBus || !selectedDate || selectedSeats.length === 0 || isSubmitting}
+          disabled={!selectedBus || !selectedDate || selectedSeats.length === 0 || isSubmitting || !user}
           className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isSubmitting ? (

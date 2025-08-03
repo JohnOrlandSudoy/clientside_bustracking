@@ -1,10 +1,10 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Mail, Calendar, MapPin, Star, LogOut, Settings, Bell, CreditCard } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { User, Mail, Calendar, MapPin, Star, LogOut, Settings, Bell, CreditCard, Phone } from 'lucide-react'
+import { useAuthAPI } from '../hooks/useAuthAPI'
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth()
+  const { user, signOut } = useAuthAPI()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
@@ -54,12 +54,23 @@ export default function ProfilePage() {
           <User className="text-white" size={40} />
         </div>
         <h1 className="text-2xl font-bold text-gray-800">
-          {user?.email?.split('@')[0] || 'User'}
+          {user?.profile?.fullName || user?.username || user?.email?.split('@')[0] || 'User'}
         </h1>
         <p className="text-gray-600 flex items-center justify-center mt-1">
           <Mail size={16} className="mr-1" />
           {user?.email}
         </p>
+        {user?.profile?.phone && (
+          <p className="text-gray-600 flex items-center justify-center mt-1">
+            <Phone size={16} className="mr-1" />
+            {user.profile.phone}
+          </p>
+        )}
+        {user?.role && (
+          <p className="text-pink-600 text-sm font-medium mt-1 capitalize">
+            {user.role}
+          </p>
+        )}
       </div>
 
       {/* User Stats */}

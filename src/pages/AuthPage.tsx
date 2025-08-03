@@ -1,15 +1,18 @@
 import React, { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { Eye, EyeOff, Mail, Lock, User, Phone, UserCheck } from 'lucide-react'
+import { useAuthAPI } from '../hooks/useAuthAPI'
 
 export default function AuthPage() {
-  const { user, signUp, signIn, loading } = useAuth()
+  const { user, signUp, signIn, loading } = useAuthAPI()
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    username: '',
+    fullName: '',
+    phone: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -32,12 +35,27 @@ export default function AuthPage() {
     setError('')
 
     try {
-      const { error } = isLogin
-        ? await signIn(formData.email, formData.password)
-        : await signUp(formData.email, formData.password)
+      let result
+      if (isLogin) {
+        result = await signIn(formData.email, formData.password)
+      } else {
+        // Validate required fields for signup
+        if (!formData.username || !formData.fullName || !formData.phone) {
+          setError('Please fill in all required fields')
+          setIsSubmitting(false)
+          return
+        }
+        result = await signUp(
+          formData.email,
+          formData.password,
+          formData.username,
+          formData.fullName,
+          formData.phone
+        )
+      }
 
-      if (error) {
-        setError(error.message)
+      if (result.error) {
+        setError(result.error)
       }
     } catch (err) {
       setError('An unexpected error occurred')
@@ -51,6 +69,17 @@ export default function AuthPage() {
       ...prev,
       [e.target.name]: e.target.value
     }))
+  }
+
+  const resetForm = () => {
+    setFormData({
+      email: '',
+      password: '',
+      username: '',
+      fullName: '',
+      phone: '',
+    })
+    setError('')
   }
 
   return (
@@ -91,6 +120,72 @@ export default function AuthPage() {
                 />
               </div>
             </div>
+
+            {/* Username Field (Signup only) */}
+            {!isLogin && (
+              <div className="mb-4">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                  Username
+                </label>
+                <div className="relative">
+                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Choose a username"
+                    required={!isLogin}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Full Name Field (Signup only) */}
+            {!isLogin && (
+              <div className="mb-4">
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your full name"
+                    required={!isLogin}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Phone Field (Signup only) */}
+            {!isLogin && (
+              <div className="mb-4">
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                    placeholder="Enter your phone number"
+                    required={!isLogin}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Password Field */}
             <div className="mb-6">
@@ -152,8 +247,7 @@ export default function AuthPage() {
                 type="button"
                 onClick={() => {
                   setIsLogin(!isLogin)
-                  setError('')
-                  setFormData({ email: '', password: '' })
+                  resetForm()
                 }}
                 className="text-pink-600 font-semibold hover:text-pink-700 transition-colors duration-200"
               >
