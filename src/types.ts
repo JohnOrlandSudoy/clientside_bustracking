@@ -32,3 +32,15 @@ export interface Terminal {
     lng: number;
   };
 }
+
+export interface Notification {
+  id: string;
+  recipient_id: string;
+  type: 'announcement' | 'route_change' | 'delay' | 'cancellation' | 'reminder' | 'general';
+  message: string;
+  created_at: string;
+  title: string | null;
+  is_read: boolean;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  read_at: string | null;
+}

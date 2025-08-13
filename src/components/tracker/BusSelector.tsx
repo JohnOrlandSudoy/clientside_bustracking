@@ -21,6 +21,21 @@ const BusSelector: React.FC<BusSelectorProps> = ({
   onETAClick,
   onBookNow
 }) => {
+  // Ref for scrolling the map into view
+  const mapSectionRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Scroll to map when a bus is selected
+  const handleSelectBus = (bus: Bus) => {
+    onSelectBus(bus);
+    // Try to scroll the map section into view
+    setTimeout(() => {
+      const mapSection = document.getElementById('bus-map-section');
+      if (mapSection) {
+        mapSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
   return (
     <div className="mb-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-3">Select Bus Route</h3>
@@ -30,7 +45,7 @@ const BusSelector: React.FC<BusSelectorProps> = ({
           return (
             <button
               key={bus.id}
-              onClick={() => onSelectBus(bus)}
+              onClick={() => handleSelectBus(bus)}
               className={`p-4 rounded-2xl border-2 transition-all duration-200 text-left ${
                 selectedBusId === bus.id
                   ? 'border-pink-500 bg-pink-50'
@@ -50,15 +65,23 @@ const BusSelector: React.FC<BusSelectorProps> = ({
                     {loadingETA ? 'Loading ETA...' : 
                      busETA ? `ETA: ${busETA.eta}` : 'ETA: --'}
                   </p>
-                  <button
+                  <span
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation();
                       onBookNow(bus.id);
                     }}
-                    className="mt-2 text-sm text-white bg-gradient-to-r from-pink-500 to-pink-400 px-3 py-1 rounded-lg hover:shadow-md transition-all duration-200"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        onBookNow(bus.id);
+                      }
+                    }}
+                    className="mt-2 inline-block text-sm text-white bg-gradient-to-r from-pink-500 to-pink-400 px-3 py-1 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-pink-400"
                   >
                     Book Now
-                  </button>
+                  </span>
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-gray-600">

@@ -59,24 +59,6 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Debug Section - Remove this in production */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-          <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
-          <div className="text-sm text-yellow-700 space-y-1">
-            <div>User: {user ? 'Logged in' : 'Not logged in'}</div>
-            <div>Token: {localStorage.getItem('auth_token') ? 'Exists' : 'None'}</div>
-            {user && (
-              <>
-                <div>Email: {user.email}</div>
-                <div>Username: {user.username}</div>
-                <div>Role: {user.role}</div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Get Started Section - Only show if not logged in */}
       {!user && (
         <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-6 text-white mb-8">

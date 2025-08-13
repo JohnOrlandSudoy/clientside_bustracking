@@ -37,16 +37,24 @@ export default function FeedbackPage() {
       try {
         setLoadingBuses(true)
         
-        // Load buses
-        const busesResponse = await authAPI.getBuses()
+        // Load buses - use getAllBuses for client access
+        const busesResponse = await authAPI.getAllBuses()
         if (busesResponse && Array.isArray(busesResponse)) {
-          setBuses(busesResponse)
+          // Transform the response to match our Bus interface
+          const transformedBuses = busesResponse.map((bus: any) => ({
+            id: bus.id,
+            route: bus.route || bus.route_name || `Bus ${bus.bus_number}`,
+            name: bus.bus_number || bus.name
+          }))
+          setBuses(transformedBuses)
         } else {
           // Fallback to mock data if API doesn't return expected format
           setBuses([
-            { id: 'c7c715d0-8195-4308-af1c-78b88f150cf4', route: 'Downtown Express' },
-            { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', route: 'University Line' },
-            { id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210', route: 'Airport Shuttle' },
+            { id: 'c7c715d0-8195-4308-af1c-78b88f150cf4', route: 'Downtown Express', name: 'BUS001' },
+            { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', route: 'University Line', name: 'BUS002' },
+            { id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210', route: 'Airport Shuttle', name: 'BUS003' },
+            { id: 'd4e5f6g7-h8i9-0123-jklm-n4o5p6q7r8s9', route: 'Shopping Center Express', name: 'BUS004' },
+            { id: 'e5f6g7h8-i9j0-1234-klmn-o5p6q7r8s9t0', route: 'Hospital Route', name: 'BUS005' },
           ])
         }
 
@@ -64,9 +72,11 @@ export default function FeedbackPage() {
         console.error('Failed to load buses:', error)
         // Fallback to mock data
         setBuses([
-          { id: 'c7c715d0-8195-4308-af1c-78b88f150cf4', route: 'Downtown Express' },
-          { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', route: 'University Line' },
-          { id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210', route: 'Airport Shuttle' },
+          { id: 'c7c715d0-8195-4308-af1c-78b88f150cf4', route: 'Downtown Express', name: 'BUS001' },
+          { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', route: 'University Line', name: 'BUS002' },
+          { id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210', route: 'Airport Shuttle', name: 'BUS003' },
+          { id: 'd4e5f6g7-h8i9-0123-jklm-n4o5p6q7r8s9', route: 'Shopping Center Express', name: 'BUS004' },
+          { id: 'e5f6g7h8-i9j0-1234-klmn-o5p6q7r8s9t0', route: 'Hospital Route', name: 'BUS005' },
         ])
       } finally {
         setLoadingBuses(false)
@@ -78,8 +88,16 @@ export default function FeedbackPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedBus || rating === 0 || !user) {
-      setError('Please select a bus and provide a rating.')
+    if (!selectedBus) {
+      setError('Please select a bus route to provide feedback for.')
+      return
+    }
+    if (rating === 0) {
+      setError('Please provide a rating for your experience.')
+      return
+    }
+    if (!user) {
+      setError('Please log in to submit feedback.')
       return
     }
 
@@ -94,11 +112,7 @@ export default function FeedbackPage() {
         comment: comment || 'No comment provided'
       }
 
-      console.log('Submitting feedback:', feedbackData) // Debug log
-
       const response = await authAPI.submitFeedback(feedbackData)
-      
-      console.log('Feedback response:', response) // Debug log
       
       if (response && response.id) {
         setSubmitted(true)
@@ -193,13 +207,105 @@ export default function FeedbackPage() {
 
       {/* Feedback Form */}
       <form onSubmit={handleSubmit} className="space-y-6 mb-8">
+        {/* Instructions */}
+        <div className="bg-gradient-to-r from-pink-50 to-blue-50 rounded-2xl p-6 border border-pink-100">
+          <div className="flex items-start space-x-3">
+            <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2">How to provide feedback</h4>
+              <ol className="text-sm text-gray-600 space-y-1">
+                <li>1. Select the bus route you traveled on</li>
+                <li>2. Rate your experience from 1 to 5 stars</li>
+                <li>3. Add optional comments about your journey</li>
+                <li>4. Submit your feedback to help improve our service</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
         {/* Bus Selection */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Bus Route</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Select Bus Route</h3>
+            {!loadingBuses && buses.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLoadingBuses(true)
+                  // Reload buses
+                  const loadData = async () => {
+                    try {
+                      const busesResponse = await authAPI.getAllBuses()
+                      if (busesResponse && Array.isArray(busesResponse)) {
+                        const transformedBuses = busesResponse.map((bus: any) => ({
+                          id: bus.id,
+                          route: bus.route || bus.route_name || `Bus ${bus.bus_number}`,
+                          name: bus.bus_number || bus.name
+                        }))
+                        setBuses(transformedBuses)
+                      }
+                    } catch (error) {
+                      console.error('Failed to reload buses:', error)
+                    } finally {
+                      setLoadingBuses(false)
+                    }
+                  }
+                  loadData()
+                }}
+                className="text-sm text-pink-600 hover:text-pink-700 font-medium flex items-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            )}
+          </div>
           {loadingBuses ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-6 h-6 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
-              <span className="ml-2 text-gray-600">Loading buses...</span>
+              <span className="ml-2 text-gray-600">Loading bus routes...</span>
+            </div>
+          ) : buses.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-gray-600 mb-2">No bus routes available</p>
+              <p className="text-sm text-gray-500 mb-4">We couldn't load the available bus routes</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoadingBuses(true)
+                  const loadData = async () => {
+                    try {
+                      const busesResponse = await authAPI.getAllBuses()
+                      if (busesResponse && Array.isArray(busesResponse)) {
+                        const transformedBuses = busesResponse.map((bus: any) => ({
+                          id: bus.id,
+                          route: bus.route || bus.route_name || `Bus ${bus.bus_number}`,
+                          name: bus.bus_number || bus.name
+                        }))
+                        setBuses(transformedBuses)
+                      }
+                    } catch (error) {
+                      console.error('Failed to reload buses:', error)
+                    } finally {
+                      setLoadingBuses(false)
+                    }
+                  }
+                  loadData()
+                }}
+                className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors text-sm"
+              >
+                Try Again
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
@@ -208,8 +314,8 @@ export default function FeedbackPage() {
                   key={bus.id}
                   className={`block p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                     selectedBus === bus.id
-                      ? 'border-pink-500 bg-pink-50'
-                      : 'border-gray-200 hover:border-pink-300'
+                      ? 'border-pink-500 bg-pink-50 shadow-md'
+                      : 'border-gray-200 hover:border-pink-300 hover:bg-pink-25'
                   }`}
                 >
                   <input
@@ -220,7 +326,23 @@ export default function FeedbackPage() {
                     onChange={(e) => setSelectedBus(e.target.value)}
                     className="sr-only"
                   />
-                  <div className="font-semibold text-gray-800">{bus.route}</div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-gray-800">{bus.route}</div>
+                      {bus.name && (
+                        <div className="text-sm text-gray-600 mt-1">Bus {bus.name}</div>
+                      )}
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedBus === bus.id
+                        ? 'border-pink-500 bg-pink-500'
+                        : 'border-gray-300'
+                    }`}>
+                      {selectedBus === bus.id && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                  </div>
                 </label>
               ))}
             </div>
@@ -277,6 +399,18 @@ export default function FeedbackPage() {
             <>
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
               Submitting Feedback...
+            </>
+          ) : !selectedBus ? (
+            <>
+              <svg className="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Select a Bus Route First
+            </>
+          ) : rating === 0 ? (
+            <>
+              <Star className="mr-2" size={18} />
+              Rate Your Experience
             </>
           ) : (
             <>

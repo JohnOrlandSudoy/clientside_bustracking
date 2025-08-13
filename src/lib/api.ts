@@ -367,9 +367,7 @@ class AuthAPI {
 
   async getBusETA(busId?: string): Promise<BusETA[]> {
     try {
-      console.log(`Fetching ETA${busId ? ` for bus: ${busId}` : ' for all buses'}`)
       const response = await this.makeRequest<BusETA[]>('/client/bus-eta', { method: 'GET' })
-      console.log(`ETA response${busId ? ` for bus ${busId}` : ''}:`, response)
       return busId ? response.filter(eta => eta.busId === busId) : response
     } catch (error) {
       console.warn(`Failed to get ETA${busId ? ` for bus ${busId}` : ' for all buses'}, using mock data:`, error)
@@ -527,6 +525,61 @@ class AuthAPI {
           created_at: new Date(Date.now() - 259200000).toISOString() // 3 days ago
         }
       ];
+    }
+  }
+
+  // Notification methods
+  async getNotifications(userId: string): Promise<any> {
+    try {
+      const response = await this.makeRequest(`/client/notifications?userId=${userId}`, { method: 'GET' });
+      
+      // Handle API response structure with notifications array and pagination
+      if (response && typeof response === 'object' && 'notifications' in response && Array.isArray(response.notifications)) {
+        return response.notifications;
+      }
+      
+      // Handle direct array response (fallback)
+      if (response && Array.isArray(response)) {
+        return response;
+      }
+      
+      // If response exists but doesn't match expected format, log it and throw error
+      throw new Error('Invalid notifications response format - expected object with notifications array');
+    } catch (error) {
+      // Re-throw the error to let the context handle it
+      throw error;
+    }
+  }
+
+  async markNotificationAsRead(notificationId: string): Promise<any> {
+    try {
+      return await this.makeRequest(`/client/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        body: JSON.stringify({ read_at: new Date().toISOString() }),
+      });
+    } catch (error) {
+      console.warn('Mark notification as read endpoint not available, using mock response');
+      // Return mock response
+      return {
+        id: notificationId,
+        is_read: true,
+        read_at: new Date().toISOString()
+      };
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<any> {
+    try {
+      return await this.makeRequest(`/client/notifications/${userId}/read-all`, {
+        method: 'PUT',
+      });
+    } catch (error) {
+      console.warn('Mark all notifications as read endpoint not available, using mock response');
+      // Return mock response
+      return {
+        success: true,
+        message: 'All notifications marked as read'
+      };
     }
   }
 }

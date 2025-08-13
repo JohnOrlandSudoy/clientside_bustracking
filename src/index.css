@@ -1,3 +1,44 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom line-clamp utility for notification text */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Notification animations */
+@keyframes notification-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.notification-slide-in {
+  animation: notification-slide-in 0.3s ease-out;
+}
+
+/* Priority-based notification styling */
+.notification-urgent {
+  border-left: 4px solid #ef4444;
+}
+
+.notification-high {
+  border-left: 4px solid #f97316;
+}
+
+.notification-normal {
+  border-left: 4px solid #3b82f6;
+}
+
+.notification-low {
+  border-left: 4px solid #6b7280;
+}
