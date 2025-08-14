@@ -50,12 +50,12 @@ export function useAuthAPI() {
     checkAuth()
   }, [])
 
-  const signUp = async (email: string, password: string, username: string, fullName: string, phone: string) => {
+  const signUp = async (email: string, password: string, username: string, fullName: string, phone: string, role: string) => {
     const signUpData: SignUpData = {
       email,
       password,
       username,
-      role: 'user', // Default role
+      role: role, // Use the passed role parameter
       profile: {
         fullName,
         phone,
