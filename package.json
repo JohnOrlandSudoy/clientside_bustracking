@@ -3,21 +3,23 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:clean": "rm -rf node_modules package-lock.json && npm install && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",
     "@supabase/supabase-js": "^2.53.0",
-    "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-leaflet": "^5.0.0",
-    "react-router-dom": "^7.7.1"
+    "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

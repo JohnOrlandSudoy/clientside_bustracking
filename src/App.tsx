@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthAPI } from './hooks/useAuthAPI'
 import { BusTrackingProvider } from './contexts/BusTrackingContext'
 import { NotificationProvider } from './contexts/NotificationContext'
@@ -17,15 +17,15 @@ import NotificationsPage from './pages/NotificationsPage'
 // Inner component to handle navigation (must be inside Router context)
 function AppContent() {
   const { user, loading, isInitialized, refreshSession, shouldRedirect, clearRedirectFlag } = useAuthAPI()
-  const navigate = useNavigate()
 
   // Handle redirect after sign out
   useEffect(() => {
     if (shouldRedirect) {
-      navigate('/')
+      // For React Router v6, we'll use window.location for the redirect
+      window.location.href = '/'
       clearRedirectFlag()
     }
-  }, [shouldRedirect, navigate, clearRedirectFlag])
+  }, [shouldRedirect, clearRedirectFlag])
 
   // Refresh session periodically to keep user logged in
   useEffect(() => {
