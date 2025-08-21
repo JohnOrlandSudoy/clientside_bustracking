@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { Star, MessageSquare, Send, ThumbsUp, AlertCircle } from 'lucide-react'
+import { Star, MessageSquare, Send, ThumbsUp, AlertCircle, MapPin, RefreshCw, Check } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { authAPI } from '../lib/api'
 
 interface Bus {
   id: string
   route: string
-  name?: string
+  name: string
+  route_name?: string
+  bus_number?: string
+  available_seats?: number
 }
 
 interface Feedback {
@@ -30,6 +33,7 @@ export default function FeedbackPage() {
   const [recentFeedback, setRecentFeedback] = useState<Feedback[]>([])
   const [loadingBuses, setLoadingBuses] = useState(true)
   const [submittedFeedback, setSubmittedFeedback] = useState<Feedback | null>(null)
+  const [success, setSuccess] = useState('')
 
   // Load buses from API
   useEffect(() => {
@@ -44,7 +48,10 @@ export default function FeedbackPage() {
           const transformedBuses = busesResponse.map((bus: any) => ({
             id: bus.id,
             route: bus.route || bus.route_name || `Bus ${bus.bus_number}`,
-            name: bus.bus_number || bus.name
+            name: bus.bus_number || bus.name,
+            route_name: bus.route_name,
+            bus_number: bus.bus_number,
+            available_seats: bus.available_seats
           }))
           setBuses(transformedBuses)
         } else {
@@ -103,6 +110,7 @@ export default function FeedbackPage() {
 
     setIsSubmitting(true)
     setError('')
+    setSuccess('')
 
     try {
       const feedbackData = {
@@ -117,6 +125,7 @@ export default function FeedbackPage() {
       if (response && response.id) {
         setSubmitted(true)
         setSubmittedFeedback(response) // Store the submitted feedback data
+        setSuccess('Your feedback has been submitted! Thank you for your feedback.')
         
         // Reset form after success
         setTimeout(() => {
@@ -125,6 +134,7 @@ export default function FeedbackPage() {
           setRating(0)
           setComment('')
           setSubmittedFeedback(null) // Clear submitted feedback data
+          setSuccess('') // Clear success message
         }, 3000)
       } else {
         setError('Failed to submit feedback. Please try again.')
@@ -138,6 +148,43 @@ export default function FeedbackPage() {
       }
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const loadBuses = async () => {
+    setLoadingBuses(true)
+    try {
+      const busesResponse = await authAPI.getAllBuses()
+      if (busesResponse && Array.isArray(busesResponse)) {
+        const transformedBuses = busesResponse.map((bus: any) => ({
+          id: bus.id,
+          route: bus.route || bus.route_name || `Bus ${bus.bus_number}`,
+          name: bus.bus_number || bus.name,
+          route_name: bus.route_name,
+          bus_number: bus.bus_number,
+          available_seats: bus.available_seats
+        }))
+        setBuses(transformedBuses)
+      } else {
+        setBuses([
+          { id: 'c7c715d0-8195-4308-af1c-78b88f150cf4', route: 'Downtown Express', name: 'BUS001' },
+          { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', route: 'University Line', name: 'BUS002' },
+          { id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210', route: 'Airport Shuttle', name: 'BUS003' },
+          { id: 'd4e5f6g7-h8i9-0123-jklm-n4o5p6q7r8s9', route: 'Shopping Center Express', name: 'BUS004' },
+          { id: 'e5f6g7h8-i9j0-1234-klmn-o5p6q7r8s9t0', route: 'Hospital Route', name: 'BUS005' },
+        ])
+      }
+    } catch (error) {
+      console.error('Failed to reload buses:', error)
+      setBuses([
+        { id: 'c7c715d0-8195-4308-af1c-78b88f150cf4', route: 'Downtown Express', name: 'BUS001' },
+        { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', route: 'University Line', name: 'BUS002' },
+        { id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210', route: 'Airport Shuttle', name: 'BUS003' },
+        { id: 'd4e5f6g7-h8i9-0123-jklm-n4o5p6q7r8s9', route: 'Shopping Center Express', name: 'BUS004' },
+        { id: 'e5f6g7h8-i9j0-1234-klmn-o5p6q7r8s9t0', route: 'Hospital Route', name: 'BUS005' },
+      ])
+    } finally {
+      setLoadingBuses(false)
     }
   }
 
@@ -190,132 +237,74 @@ export default function FeedbackPage() {
   }
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Share Your Experience</h1>
-        <p className="text-gray-600">Help us improve our bus service</p>
+    <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-lg mx-auto">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Send Feedback</h1>
+        <p className="text-xs sm:text-sm lg:text-base text-gray-600">Help us improve our service</p>
       </div>
 
-      {/* Error Message */}
+      {/* Instructions */}
+      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
+        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-blue-800 mb-2 flex items-center">
+          <MessageSquare className="mr-1.5 sm:mr-2" size={18} />
+          How to Submit Feedback
+        </h3>
+        <ul className="text-xs sm:text-sm text-blue-700 space-y-1">
+          <li>• Select a bus route you want to provide feedback for</li>
+          <li>• Rate your experience from 1-5 stars</li>
+          <li>• Share your comments and suggestions</li>
+          <li>• Your feedback helps improve our service</li>
+        </ul>
+      </div>
+
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
-          <AlertCircle className="text-red-500 mr-3" size={20} />
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start">
+          <AlertCircle className="text-red-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" size={16} />
+          <p className="text-red-600 text-xs sm:text-sm">{error}</p>
         </div>
       )}
 
-      {/* Feedback Form */}
-      <form onSubmit={handleSubmit} className="space-y-6 mb-8">
-        {/* Instructions */}
-        <div className="bg-gradient-to-r from-pink-50 to-blue-50 rounded-2xl p-6 border border-pink-100">
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-2">How to provide feedback</h4>
-              <ol className="text-sm text-gray-600 space-y-1">
-                <li>1. Select the bus route you traveled on</li>
-                <li>2. Rate your experience from 1 to 5 stars</li>
-                <li>3. Add optional comments about your journey</li>
-                <li>4. Submit your feedback to help improve our service</li>
-              </ol>
-            </div>
-          </div>
+      {success && (
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-xl flex items-start">
+          <Check className="text-green-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" size={16} />
+          <p className="text-green-600 text-xs sm:text-sm">{success}</p>
         </div>
+      )}
 
-        {/* Bus Selection */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Select Bus Route</h3>
-            {!loadingBuses && buses.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setLoadingBuses(true)
-                  // Reload buses
-                  const loadData = async () => {
-                    try {
-                      const busesResponse = await authAPI.getAllBuses()
-                      if (busesResponse && Array.isArray(busesResponse)) {
-                        const transformedBuses = busesResponse.map((bus: any) => ({
-                          id: bus.id,
-                          route: bus.route || bus.route_name || `Bus ${bus.bus_number}`,
-                          name: bus.bus_number || bus.name
-                        }))
-                        setBuses(transformedBuses)
-                      }
-                    } catch (error) {
-                      console.error('Failed to reload buses:', error)
-                    } finally {
-                      setLoadingBuses(false)
-                    }
-                  }
-                  loadData()
-                }}
-                className="text-sm text-pink-600 hover:text-pink-700 font-medium flex items-center"
-              >
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-              </button>
-            )}
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
+        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+            <MapPin className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
+            Select Bus Route
+          </h3>
+          
           {loadingBuses ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
-              <span className="ml-2 text-gray-600">Loading bus routes...</span>
+            <div className="flex items-center justify-center py-6 sm:py-8">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
+              <span className="ml-2 text-gray-600 text-xs sm:text-sm">Loading routes...</span>
             </div>
           ) : buses.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p className="text-gray-600 mb-2">No bus routes available</p>
-              <p className="text-sm text-gray-500 mb-4">We couldn't load the available bus routes</p>
+            <div className="text-center py-6 sm:py-8 text-gray-500">
+              <MapPin className="mx-auto mb-2 sm:mb-3 text-gray-300" size={24} />
+              <p className="text-gray-600 mb-1.5 sm:mb-2 text-xs sm:text-sm lg:text-base">No bus routes available</p>
+              <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">Please try refreshing the page</p>
               <button
                 type="button"
-                onClick={() => {
-                  setLoadingBuses(true)
-                  const loadData = async () => {
-                    try {
-                      const busesResponse = await authAPI.getAllBuses()
-                      if (busesResponse && Array.isArray(busesResponse)) {
-                        const transformedBuses = busesResponse.map((bus: any) => ({
-                          id: bus.id,
-                          route: bus.route || bus.route_name || `Bus ${bus.bus_number}`,
-                          name: bus.bus_number || bus.name
-                        }))
-                        setBuses(transformedBuses)
-                      }
-                    } catch (error) {
-                      console.error('Failed to reload buses:', error)
-                    } finally {
-                      setLoadingBuses(false)
-                    }
-                  }
-                  loadData()
-                }}
-                className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors text-sm"
+                onClick={loadBuses}
+                className="bg-pink-500 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm hover:bg-pink-600 transition-colors duration-200 touch-target"
               >
                 Try Again
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {buses.map((bus) => (
                 <label
                   key={bus.id}
-                  className={`block p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                  className={`block p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                     selectedBus === bus.id
-                      ? 'border-pink-500 bg-pink-50 shadow-md'
-                      : 'border-gray-200 hover:border-pink-300 hover:bg-pink-25'
+                      ? 'border-pink-500 bg-pink-50'
+                      : 'border-gray-200 hover:border-pink-300'
                   }`}
                 >
                   <input
@@ -326,103 +315,122 @@ export default function FeedbackPage() {
                     onChange={(e) => setSelectedBus(e.target.value)}
                     className="sr-only"
                   />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-gray-800">{bus.route}</div>
-                      {bus.name && (
-                        <div className="text-sm text-gray-600 mt-1">Bus {bus.name}</div>
-                      )}
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-800 text-xs sm:text-sm lg:text-base truncate">
+                        {bus.route_name || 'Unknown Route'}
+                      </h4>
+                      <div className="space-y-1 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Bus: {bus.bus_number}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {bus.available_seats || 0} seats available
+                        </p>
+                      </div>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedBus === bus.id
-                        ? 'border-pink-500 bg-pink-500'
-                        : 'border-gray-300'
-                    }`}>
-                      {selectedBus === bus.id && (
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                      )}
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-xs sm:text-sm text-gray-500">Route ID</div>
+                      <div className="text-xs sm:text-sm font-mono text-gray-600 break-all max-w-[80px] sm:max-w-[120px]">
+                        {bus.id.slice(0, 8)}...
+                      </div>
                     </div>
                   </div>
                 </label>
               ))}
             </div>
           )}
+          
+          {buses.length > 0 && (
+            <button
+              type="button"
+              onClick={loadBuses}
+              className="mt-3 sm:mt-4 w-full sm:w-auto bg-gray-100 text-gray-600 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center touch-target"
+            >
+              <RefreshCw className="mr-1.5 sm:mr-2" size={14} />
+              Refresh Routes
+            </button>
+          )}
         </div>
 
-        {/* Rating */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Star className="mr-2 text-pink-500" size={20} />
+        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+            <Star className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
             Rate Your Experience
           </h3>
-          <div className="flex justify-center space-x-2 mb-4">
-            {renderStars(rating, true, 32)}
+          
+          <div className="flex justify-center space-x-1 sm:space-x-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setRating(star)}
+                className={`text-2xl sm:text-3xl lg:text-4xl transition-all duration-200 hover:scale-110 active:scale-95 touch-target ${
+                  star <= rating ? 'text-yellow-400' : 'text-gray-300'
+                }`}
+              >
+                ★
+              </button>
+            ))}
           </div>
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
+          
+          <div className="text-center mt-2 sm:mt-3">
+            <p className="text-xs sm:text-sm text-gray-600">
               {rating === 0 && 'Select a rating'}
-              {rating === 1 && 'Poor - Needs significant improvement'}
-              {rating === 2 && 'Fair - Below expectations'}
-              {rating === 3 && 'Good - Met expectations'}
-              {rating === 4 && 'Very Good - Exceeded expectations'}
-              {rating === 5 && 'Excellent - Outstanding service'}
+              {rating === 1 && 'Poor'}
+              {rating === 2 && 'Fair'}
+              {rating === 3 && 'Good'}
+              {rating === 4 && 'Very Good'}
+              {rating === 5 && 'Excellent'}
             </p>
           </div>
         </div>
 
-        {/* Comment */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <MessageSquare className="mr-2 text-pink-500" size={20} />
-            Comments (Optional)
+        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+            <MessageSquare className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
+            Additional Comments
           </h3>
+          
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Share your experience... What went well? What could be improved?"
+            placeholder="Share your experience, suggestions, or any issues you encountered..."
             rows={4}
-            className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 resize-none"
+            className="w-full p-3 sm:p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 resize-none text-xs sm:text-sm lg:text-base touch-target"
             maxLength={500}
           />
-          <div className="text-right text-sm text-gray-500 mt-2">
-            {comment.length}/500 characters
+          
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-xs text-gray-500">
+              {comment.length}/500 characters
+            </span>
+            {comment.length > 400 && (
+              <span className="text-xs text-orange-600">
+                {500 - comment.length} characters left
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
-          disabled={!selectedBus || rating === 0 || isSubmitting || !user}
-          className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
+          disabled={!selectedBus || rating === 0 || isSubmitting}
+          className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-xs sm:text-sm lg:text-base touch-target"
         >
           {isSubmitting ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            <div className="flex items-center justify-center">
+              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
               Submitting Feedback...
-            </>
-          ) : !selectedBus ? (
-            <>
-              <svg className="mr-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Select a Bus Route First
-            </>
-          ) : rating === 0 ? (
-            <>
-              <Star className="mr-2" size={18} />
-              Rate Your Experience
-            </>
+            </div>
           ) : (
-            <>
-              <Send className="mr-2" size={18} />
-              Submit Feedback
-            </>
+            'Submit Feedback'
           )}
         </button>
       </form>
 
       {/* Recent Feedback */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
+      <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100 mt-4 sm:mt-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Reviews</h3>
         <div className="space-y-4">
           {recentFeedback.length > 0 ? (

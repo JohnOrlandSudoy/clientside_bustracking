@@ -16,12 +16,13 @@ export default function BottomNavigation() {
   }
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Home', key: 'home' },
-    { path: '/tracker', icon: MapPin, label: 'Tracker', key: 'tracker' },
+    { path: '/', icon: Home, label: 'Home', shortLabel: 'Home', key: 'home' },
+    { path: '/tracker', icon: MapPin, label: 'Tracker', shortLabel: 'Track', key: 'tracker' },
     { 
       path: user ? '/notifications' : '/auth', 
       icon: Bell, 
       label: 'Notifications',
+      shortLabel: 'Notifs',
       key: 'notifications',
       requiresAuth: true,
       badge: notificationState?.unreadCount || 0
@@ -30,6 +31,7 @@ export default function BottomNavigation() {
       path: user ? '/booking' : '/auth', 
       icon: Calendar, 
       label: 'Book',
+      shortLabel: 'Book',
       key: 'booking',
       requiresAuth: true 
     },
@@ -37,6 +39,7 @@ export default function BottomNavigation() {
       path: user ? '/feedback' : '/auth', 
       icon: MessageCircle, 
       label: 'Feedback',
+      shortLabel: 'Feedback',
       key: 'feedback',
       requiresAuth: true 
     },
@@ -44,6 +47,7 @@ export default function BottomNavigation() {
       path: user ? '/profile' : '/auth', 
       icon: User, 
       label: 'Profile',
+      shortLabel: 'Profile',
       key: 'profile',
       requiresAuth: true 
     },
@@ -52,7 +56,7 @@ export default function BottomNavigation() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-pink-100 px-1 sm:px-2 py-1 sm:py-2 z-50 safe-bottom">
       <div className="flex justify-around items-center max-w-lg mx-auto">
-        {navItems.map(({ path, icon: Icon, label, key, requiresAuth, badge }) => {
+        {navItems.map(({ path, icon: Icon, label, shortLabel, key, requiresAuth, badge }) => {
           const isActive = location.pathname === path
           const isDisabled = requiresAuth && !user
           
@@ -82,7 +86,11 @@ export default function BottomNavigation() {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium leading-tight text-center max-w-[60px] sm:max-w-none">{label}</span>
+              {/* Use short labels for very small screens to prevent overlapping */}
+              <span className="text-xs font-medium leading-tight text-center max-w-[50px] sm:max-w-[60px] lg:max-w-none truncate">
+                <span className="hidden xs:inline">{label}</span>
+                <span className="xs:hidden">{shortLabel}</span>
+              </span>
               {isDisabled && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-gray-300 rounded-full"></div>
               )}
@@ -97,7 +105,10 @@ export default function BottomNavigation() {
             className="flex flex-col items-center py-1.5 sm:py-2 px-1 sm:px-2 rounded-lg transition-all duration-200 text-red-600 hover:text-red-700 hover:bg-red-50 active:scale-95 min-h-[56px] sm:min-h-[60px] justify-center touch-target"
           >
             <LogOut size={18} className="mb-1" />
-            <span className="text-xs font-medium leading-tight text-center max-w-[60px] sm:max-w-none">Logout</span>
+            <span className="text-xs font-medium leading-tight text-center max-w-[50px] sm:max-w-[60px] lg:max-w-none truncate">
+              <span className="hidden xs:inline">Logout</span>
+              <span className="xs:hidden">Logout</span>
+            </span>
           </button>
         )}
       </div>

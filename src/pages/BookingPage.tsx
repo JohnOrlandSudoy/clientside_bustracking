@@ -197,41 +197,41 @@ export default function BookingPage() {
 
   if (bookingSuccess) {
     return (
-      <div className="px-4 py-6 max-w-lg mx-auto">
-        <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <Check className="text-white" size={48} />
+      <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-lg mx-auto">
+        <div className="text-center py-8 sm:py-12">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+            <Check className="text-white" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Booking Confirmed!</h1>
-          <p className="text-gray-600 mb-6">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-3 sm:mb-4">Booking Confirmed!</h1>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600 mb-4 sm:mb-6 px-2">
             Your seats have been successfully reserved
           </p>
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100 mb-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Booking Details</h3>
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-green-100 mb-4 sm:mb-6">
+            <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-sm sm:text-base lg:text-lg">Booking Details</h3>
             <div className="space-y-2 text-left">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Booking ID:</span>
-                <span className="font-semibold">{bookingData?.id}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Booking ID:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base break-all">{bookingData?.id}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Route:</span>
-                <span className="font-semibold">{selectedBusData?.route_name}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Route:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base text-right">{selectedBusData?.route_name}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Date:</span>
-                <span className="font-semibold">{selectedDate}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Date:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base">{selectedDate}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Seats:</span>
-                <span className="font-semibold">{selectedSeats.join(', ')}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Seats:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base">{selectedSeats.join(', ')}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Status:</span>
-                <span className="font-semibold capitalize">{bookingData?.status}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Status:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base capitalize">{bookingData?.status}</span>
               </div>
-              <div className="flex justify-between border-t pt-2">
-                <span className="text-gray-600">Total:</span>
-                <span className="font-bold text-pink-600">${totalPrice}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t pt-2">
+                <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Total:</span>
+                <span className="font-bold text-pink-600 text-sm sm:text-base lg:text-lg">${totalPrice}</span>
               </div>
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function BookingPage() {
               setSelectedSeats([])
               setBookingData(null)
             }}
-            className="bg-gradient-to-r from-pink-500 to-pink-400 text-white px-8 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+            className="bg-gradient-to-r from-pink-500 to-pink-400 text-white px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-xs sm:text-sm lg:text-base touch-target"
           >
             Book Another Trip
           </button>
@@ -253,36 +253,36 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Book Your Trip</h1>
-        <p className="text-gray-600">Reserve your seat in advance</p>
+    <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-lg mx-auto">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Book Your Trip</h1>
+        <p className="text-xs sm:text-sm lg:text-base text-gray-600">Reserve your seat in advance</p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
-          <AlertCircle className="text-red-500 mr-3" size={20} />
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start">
+          <AlertCircle className="text-red-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" size={16} />
+          <p className="text-red-600 text-xs sm:text-sm">{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleBooking} className="space-y-6">
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <MapPin className="mr-2 text-pink-500" size={20} />
+      <form onSubmit={handleBooking} className="space-y-3 sm:space-y-4 lg:space-y-6">
+        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+            <MapPin className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
             Select Route
           </h3>
           {loadingBuses ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
-              <span className="ml-2 text-gray-600">Loading buses...</span>
+            <div className="flex items-center justify-center py-6 sm:py-8">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
+              <span className="ml-2 text-gray-600 text-xs sm:text-sm">Loading buses...</span>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {buses.map((bus) => (
                 <label
                   key={bus.id}
-                  className={`block p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                  className={`block p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                     selectedBus === bus.id
                       ? 'border-pink-500 bg-pink-50'
                       : 'border-gray-200 hover:border-pink-300'
@@ -296,27 +296,27 @@ export default function BookingPage() {
                     onChange={(e) => setSelectedBus(e.target.value)}
                     className="sr-only"
                   />
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">{bus.route_name || 'Unknown Route'}</h4>
-                      <p className="text-sm text-gray-600">
-                        {bus.eta ? `ETA: ${bus.eta}` : 'ETA: --'}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {bus.currentLocation 
-                          ? `Current: Lat ${bus.currentLocation.lat}, Lng ${bus.currentLocation.lng}`
-                          : 'Location unavailable'}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {bus.available_seats || 0} seats available
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-pink-600">$15</div>
-                      <div className="text-sm text-gray-600">per seat</div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        Bus: {bus.bus_number}
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-800 text-xs sm:text-sm lg:text-base truncate">
+                        {bus.route_name || 'Unknown Route'}
+                      </h4>
+                      <div className="space-y-1 mt-1">
+                        <p className="text-xs sm:text-sm text-gray-600 flex items-center">
+                          <Clock className="mr-1" size={12} />
+                          {bus.eta ? `ETA: ${bus.eta}` : 'ETA: --'}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          {bus.available_seats || 0} seats available
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          Bus: {bus.bus_number}
+                        </p>
                       </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-base sm:text-lg lg:text-xl font-bold text-pink-600">$15</div>
+                      <div className="text-xs sm:text-sm text-gray-600">per seat</div>
                     </div>
                   </div>
                 </label>
@@ -325,9 +325,9 @@ export default function BookingPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-            <Calendar className="mr-2 text-pink-500" size={20} />
+        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+            <Calendar className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
             Select Date
           </h3>
           <input
@@ -335,26 +335,26 @@ export default function BookingPage() {
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             min={new Date().toISOString().split('T')[0]}
-            className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+            className="w-full p-2.5 sm:p-3 lg:p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-xs sm:text-sm lg:text-base touch-target"
             required
           />
         </div>
 
         {selectedBus && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-              <Users className="mr-2 text-pink-500" size={20} />
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+            <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+              <Users className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
               Select Seats (Max 4)
             </h3>
             
-            <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
               {generateSeats(selectedBusData?.total_seats || 20, selectedBusData?.available_seats || 0).map((seat) => (
                 <button
                   key={seat.number}
                   type="button"
                   onClick={() => !seat.isOccupied && handleSeatSelect(seat.number)}
                   disabled={seat.isOccupied}
-                  className={`w-12 h-12 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg font-semibold text-xs sm:text-sm transition-all duration-200 touch-target ${
                     seat.isOccupied
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : seat.isSelected
@@ -367,18 +367,18 @@ export default function BookingPage() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs sm:text-sm gap-2 sm:gap-0">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <div className="flex items-center">
-                  <div className="w-4 h-4 bg-gray-300 rounded mr-2"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gray-300 rounded mr-1.5 sm:mr-2"></div>
                   <span className="text-gray-600">Occupied</span>
                 </div>
                 <div className="flex items-center">
-                  <div className="w-4 h-4 bg-pink-500 rounded mr-2"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-pink-500 rounded mr-1.5 sm:mr-2"></div>
                   <span className="text-gray-600">Selected</span>
                 </div>
               </div>
-              <span className="text-gray-600">
+              <span className="text-gray-600 text-center sm:text-right">
                 {selectedSeats.length} seat{selectedSeats.length !== 1 ? 's' : ''} selected
               </span>
             </div>
@@ -386,30 +386,30 @@ export default function BookingPage() {
         )}
 
         {selectedSeats.length > 0 && (
-          <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-6 text-white shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <CreditCard className="mr-2" size={20} />
+          <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-3 sm:p-4 lg:p-6 text-white shadow-lg">
+            <h3 className="text-sm sm:text-base lg:text-lg font-semibold mb-3 sm:mb-4 flex items-center">
+              <CreditCard className="mr-1.5 sm:mr-2" size={18} />
               Booking Summary
             </h3>
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Route:</span>
-                <span className="font-semibold">{selectedBusData?.route_name || 'Unknown Route'}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-xs sm:text-sm">Route:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base text-right">{selectedBusData?.route_name || 'Unknown Route'}</span>
               </div>
-              <div className="flex justify-between">
-                <span>ETA:</span>
-                <span className="font-semibold">{selectedBusData?.eta || 'N/A'}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-xs sm:text-sm">ETA:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base">{selectedBusData?.eta || 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Seats:</span>
-                <span className="font-semibold">{selectedSeats.join(', ')}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-xs sm:text-sm">Seats:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base">{selectedSeats.join(', ')}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Date:</span>
-                <span className="font-semibold">{selectedDate}</span>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <span className="text-xs sm:text-sm">Date:</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base">{selectedDate}</span>
               </div>
               <div className="border-t border-pink-300 pt-2">
-                <div className="flex justify-between text-lg">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm sm:text-base lg:text-lg">
                   <span>Total:</span>
                   <span className="font-bold">${totalPrice}</span>
                 </div>
@@ -421,11 +421,11 @@ export default function BookingPage() {
         <button
           type="submit"
           disabled={!selectedBus || !selectedDate || selectedSeats.length === 0 || isSubmitting || !user}
-          className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-xs sm:text-sm lg:text-base touch-target"
         >
           {isSubmitting ? (
             <div className="flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
               Processing Booking...
             </div>
           ) : (

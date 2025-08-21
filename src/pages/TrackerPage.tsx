@@ -523,7 +523,7 @@ export default function TrackerPage() {
   const showBlockingOverlay = permissionStatus === 'denied' || permissionStatus === 'prompt' || permissionStatus === 'unknown';
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto" style={{ position: 'relative' }}>
+    <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-lg mx-auto" style={{ position: 'relative' }}>
       {showBlockingOverlay && (
         <div style={{
           position: 'fixed',
@@ -574,56 +574,56 @@ export default function TrackerPage() {
         </div>
       )}
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Bus Tracker</h1>
-          <p className="text-gray-600">Real-time location updates</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">Bus Tracker</h1>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600">Real-time location updates</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           {/* Location Tracking Button */}
           <button
             onClick={toggleLocationTracking}
             disabled={locationLoading || permissionStatus === 'denied'}
-            className={`p-3 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 ${
+            className={`p-2.5 sm:p-3 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 touch-target ${
               isTracking 
                 ? 'bg-green-500 text-white ring-2 ring-green-300' 
                 : 'bg-red-500 text-white ring-2 ring-red-300'
             }`}
             title={isTracking ? 'Stop real-time tracking' : 'Start real-time tracking'}
           >
-            {isTracking ? <Wifi size={20} /> : <WifiOff size={20} />}
+            {isTracking ? <Wifi size={18} /> : <WifiOff size={18} />}
           </button>
           
           {/* Manual Location Button */}
           <button
             onClick={getUserLocation}
             disabled={locationLoading || permissionStatus === 'denied'}
-            className="bg-red-500 text-white p-3 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 ring-2 ring-red-300"
+            className="bg-red-500 text-white p-2.5 sm:p-3 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 ring-2 ring-red-300 touch-target"
             title="Get my current location"
           >
-            <MapPin size={20} className={locationLoading ? 'animate-pulse' : ''} />
+            <MapPin size={18} className={locationLoading ? 'animate-pulse' : ''} />
           </button>
           
           {/* Refresh Button */}
           <button
             onClick={refreshETAs}
             disabled={state.isRefreshing || !selectedBus}
-            className="bg-pink-500 text-white p-3 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50"
+            className="bg-pink-500 text-white p-2.5 sm:p-3 rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 touch-target"
           >
-            <RefreshCw size={20} className={state.isRefreshing ? 'animate-spin' : ''} />
+            <RefreshCw size={18} className={state.isRefreshing ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
 
       {/* Location Status */}
       {userLocation && (
-        <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl">
-          <div className="flex items-center justify-between">
+        <div className="mb-4 p-3 sm:p-4 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 rounded-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
             <div className="flex items-center">
-              <div className="w-4 h-4 bg-red-500 rounded-full mr-3 animate-pulse"></div>
-              <div>
-                <p className="text-red-700 text-sm font-medium">📍 Your Current Location</p>
-                <p className="text-red-600 text-xs font-mono">
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded-full mr-2 sm:mr-3 animate-pulse flex-shrink-0"></div>
+              <div className="flex-1 min-w-0">
+                <p className="text-red-700 text-xs sm:text-sm font-medium">📍 Your Current Location</p>
+                <p className="text-red-600 text-xs font-mono break-all">
                   {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
                 </p>
                 {locationAccuracy && (
@@ -633,8 +633,8 @@ export default function TrackerPage() {
                 )}
               </div>
             </div>
-            <div className="text-right">
-              <div className="flex items-center gap-2">
+            <div className="text-left sm:text-right flex-shrink-0">
+              <div className="flex items-center gap-2 mb-2 sm:mb-0">
                 {isTracking && (
                   <div className="flex items-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></div>
@@ -647,7 +647,7 @@ export default function TrackerPage() {
               </div>
               <button
                 onClick={getUserLocation}
-                className="mt-2 px-3 py-1 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 transition-colors"
+                className="w-full sm:w-auto px-3 py-1.5 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 transition-colors touch-target"
                 title="Refresh location"
               >
                 🔄 Refresh
@@ -659,31 +659,31 @@ export default function TrackerPage() {
 
       {/* Location Error with Troubleshooting */}
       {locationError && (
-        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+        <div className="mb-4 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
           <div className="flex items-start">
-            <AlertCircle className="text-yellow-500 mr-3 mt-0.5" size={16} />
-            <div className="flex-1">
-              <p className="text-yellow-700 text-sm font-medium mb-2">{locationError}</p>
+            <AlertCircle className="text-yellow-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" size={16} />
+            <div className="flex-1 min-w-0">
+              <p className="text-yellow-700 text-xs sm:text-sm font-medium mb-2">{locationError}</p>
               
               {/* Troubleshooting Steps */}
-              <div className="bg-white p-3 rounded-lg border border-yellow-100">
+              <div className="bg-white p-2.5 sm:p-3 rounded-lg border border-yellow-100">
                 <p className="text-yellow-800 text-xs font-medium mb-2">Troubleshooting:</p>
                 <ul className="text-yellow-700 text-xs space-y-1">
-                  <li className="flex items-center">
-                    <Shield size={12} className="mr-1" />
-                    Make sure location services are enabled in your browser
+                  <li className="flex items-start">
+                    <Shield size={12} className="mr-1 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs">Make sure location services are enabled in your browser</span>
                   </li>
-                  <li className="flex items-center">
-                    <Settings size={12} className="mr-1" />
-                    Check if GPS is enabled on your device
+                  <li className="flex items-start">
+                    <Settings size={12} className="mr-1 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs">Check if GPS is enabled on your device</span>
                   </li>
-                  <li className="flex items-center">
-                    <MapPin size={12} className="mr-1" />
-                    Try refreshing the page and allowing location access
+                  <li className="flex items-start">
+                    <MapPin size={12} className="mr-1 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs">Try refreshing the page and allowing location access</span>
                   </li>
-                  <li className="flex items-center">
-                    <Navigation size={12} className="mr-1" />
-                    Ensure you're using HTTPS or localhost
+                  <li className="flex items-start">
+                    <Navigation size={12} className="mr-1 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs">Ensure you're using HTTPS or localhost</span>
                   </li>
                 </ul>
               </div>
@@ -694,10 +694,10 @@ export default function TrackerPage() {
 
       {/* Permission Status */}
       {permissionStatus === 'denied' && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center">
-          <Shield className="text-red-500 mr-2" size={16} />
-          <div>
-            <p className="text-red-700 text-sm font-medium">Location Access Blocked</p>
+        <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start">
+          <Shield className="text-red-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" size={16} />
+          <div className="flex-1 min-w-0">
+            <p className="text-red-700 text-xs sm:text-sm font-medium">Location Access Blocked</p>
             <p className="text-red-600 text-xs">Please enable location access in your browser settings</p>
           </div>
         </div>
@@ -705,9 +705,9 @@ export default function TrackerPage() {
 
       {/* Error Message */}
       {state.error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
-          <AlertCircle className="text-red-500 mr-3" size={20} />
-          <p className="text-red-600 text-sm">{state.error}</p>
+        <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start">
+          <AlertCircle className="text-red-500 mr-2 sm:mr-3 mt-0.5 flex-shrink-0" size={16} />
+          <p className="text-red-600 text-xs sm:text-sm">{state.error}</p>
         </div>
       )}
 

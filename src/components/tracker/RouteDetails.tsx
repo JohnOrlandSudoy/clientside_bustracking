@@ -36,17 +36,17 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">Route Details</h3>
-      <div className="space-y-4">
+    <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+      <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Route Details</h3>
+      <div className="space-y-2 sm:space-y-4">
         <div className="flex items-center">
-          <div className="w-4 h-4 rounded-full mr-4 border-2 bg-green-100 text-green-700 border-green-200">
-            <div className="w-2 h-2 bg-green-500 rounded-full mx-auto mt-0.5"></div>
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 sm:mr-4 border-2 bg-green-100 text-green-700 border-green-200 flex-shrink-0">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mx-auto mt-0.5"></div>
           </div>
-          <div className="flex-1">
-            <div className="flex justify-between items-center">
-              <h4 className="font-semibold text-green-700">Start Terminal</h4>
-              <span className="text-xs px-2 py-1 rounded-full border bg-green-100 text-green-700 border-green-200">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+              <h4 className="font-semibold text-green-700 text-xs sm:text-sm">Start Terminal</h4>
+              <span className="text-xs px-2 py-1 rounded-full border bg-green-100 text-green-700 border-green-200 truncate max-w-[120px] sm:max-w-[150px] lg:max-w-[200px]">
                 {startTerminal?.name || getTerminalName(selectedBusETA?.route.start_terminal_id) || 'Unknown'}
               </span>
             </div>
@@ -54,15 +54,15 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         </div>
 
         <div className="flex items-center">
-          <div className="w-4 h-4 rounded-full mr-4 border-2 bg-pink-100 text-pink-700 border-pink-200">
-            <div className="w-2 h-2 bg-pink-500 rounded-full mx-auto mt-0.5 animate-pulse"></div>
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 sm:mr-4 border-2 bg-pink-100 text-pink-700 border-pink-200 flex-shrink-0">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-pink-500 rounded-full mx-auto mt-0.5 animate-pulse"></div>
           </div>
-          <div className="flex-1">
-            <div className="flex justify-between items-center">
-              <h4 className="font-semibold text-pink-700">Current Location</h4>
-              <span className="text-xs px-2 py-1 rounded-full border bg-pink-100 text-pink-700 border-pink-200">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+              <h4 className="font-semibold text-pink-700 text-xs sm:text-sm">Current Location</h4>
+              <span className="text-xs px-2 py-1 rounded-full border bg-pink-100 text-pink-700 border-pink-200 truncate max-w-[120px] sm:max-w-[150px] lg:max-w-[200px]">
                 {selectedBusETA?.currentLocation
-                  ? `Lat: ${selectedBusETA.currentLocation.lat}, Lng: ${selectedBusETA.currentLocation.lng}`
+                  ? `Lat: ${selectedBusETA.currentLocation.lat.toFixed(6)}, Lng: ${selectedBusETA.currentLocation.lng.toFixed(6)}`
                   : 'En route'}
               </span>
             </div>
@@ -70,11 +70,11 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
         </div>
 
         <div className="flex items-center">
-          <div className="w-4 h-4 rounded-full mr-4 border-2 bg-gray-100 text-gray-600 border-gray-200"></div>
-          <div className="flex-1">
-            <div className="flex justify-between items-center">
-              <h4 className="font-semibold text-gray-600">End Terminal</h4>
-              <span className="text-xs px-2 py-1 rounded-full border bg-gray-100 text-gray-600 border-gray-200">
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full mr-2 sm:mr-4 border-2 bg-gray-100 text-gray-600 border-gray-200 flex-shrink-0"></div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+              <h4 className="font-semibold text-gray-600 text-xs sm:text-sm">End Terminal</h4>
+              <span className="text-xs px-2 py-1 rounded-full border bg-gray-100 text-gray-600 border-gray-200 truncate max-w-[120px] sm:max-w-[150px] lg:max-w-[200px]">
                 {endTerminal?.name || getTerminalName(selectedBusETA?.route.end_terminal_id) || 'Unknown'}
               </span>
             </div>
