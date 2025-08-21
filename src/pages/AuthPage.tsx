@@ -171,38 +171,38 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white px-4 sm:px-6 py-6 sm:py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
       <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="bg-gradient-to-r from-pink-500 to-pink-400 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <User className="text-white" size={32} />
+        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+          <div className="bg-gradient-to-r from-pink-500 to-pink-400 w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg">
+            <User className="text-white" size={28} />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
-          <p className="text-sm sm:text-base text-gray-600 px-2">
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600 px-1 sm:px-2">
             {isLogin ? 'Sign in to track your buses' : 'Join us for better commuting'}
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-pink-100">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
+          <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
             {/* Email Field */}
-            <div className="mb-4">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-3 sm:mb-4">
+              <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                 <input
                   type="email"
                   id="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
+                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
                   placeholder="Enter your email"
                   required
                   disabled={isSubmitting}
@@ -212,19 +212,19 @@ export default function AuthPage() {
 
             {/* Username Field (Signup only) */}
             {!isLogin && (
-              <div className="mb-4">
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-3 sm:mb-4">
+                <label htmlFor="username" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Username
                 </label>
                 <div className="relative">
-                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <input
                     type="text"
                     id="username"
                     name="username"
                     value={formData.username}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
+                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
                     placeholder="Choose a username"
                     required={!isLogin}
                     disabled={isSubmitting}
@@ -235,19 +235,19 @@ export default function AuthPage() {
 
             {/* Full Name Field (Signup only) */}
             {!isLogin && (
-              <div className="mb-4">
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-3 sm:mb-4">
+                <label htmlFor="fullName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <input
                     type="text"
                     id="fullName"
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
+                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
                     placeholder="Enter your full name"
                     required={!isLogin}
                     disabled={isSubmitting}
@@ -258,19 +258,19 @@ export default function AuthPage() {
 
             {/* Phone Field (Signup only) */}
             {!isLogin && (
-              <div className="mb-4">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-3 sm:mb-4">
+                <label htmlFor="phone" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Phone Number
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <input
                     type="tel"
                     id="phone"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
+                    className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
                     placeholder="+63 912 345 6789"
                     required={!isLogin}
                     pattern="^(\+63|0)?[9]\d{9}$"
@@ -283,18 +283,18 @@ export default function AuthPage() {
 
             {/* Role Selection Field (Signup only) */}
             {!isLogin && (
-              <div className="mb-4">
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="mb-3 sm:mb-4">
+                <label htmlFor="role" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   User Role
                 </label>
                 <div className="relative">
-                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <select
                     id="role"
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer disabled:cursor-not-allowed text-base"
+                    className="w-full pl-9 sm:pl-10 pr-8 sm:pr-10 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer disabled:cursor-not-allowed text-sm sm:text-base touch-target"
                     required={!isLogin}
                     disabled={isSubmitting}
                   >
@@ -303,7 +303,7 @@ export default function AuthPage() {
                     <option value="driver">🚗 Driver</option>
                     <option value="admin">👑 Admin</option>
                   </select>
-                  <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </div>
@@ -311,19 +311,19 @@ export default function AuthPage() {
             )}
 
             {/* Password Field */}
-            <div className="mb-6">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="mb-4 sm:mb-6">
+              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
+                  className="w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
                   placeholder="Enter your password"
                   required
                   minLength={6}
@@ -332,30 +332,30 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 disabled:opacity-50 p-1"
+                  className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 disabled:opacity-50 p-1 touch-target"
                   disabled={isSubmitting}
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               
               {/* Password Requirements */}
               {!isLogin && (
-                <div className="mt-3 text-xs text-gray-500 space-y-1">
+                <div className="mt-2 sm:mt-3 text-xs text-gray-500 space-y-1">
                   <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${formData.password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-1.5 sm:mr-2 ${formData.password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     At least 6 characters
                   </div>
                   <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-1.5 sm:mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     One uppercase letter
                   </div>
                   <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-1.5 sm:mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     One lowercase letter
                   </div>
                   <div className="flex items-center">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-1.5 sm:mr-2 ${/[0-9]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     One number
                   </div>
                 </div>
@@ -364,8 +364,8 @@ export default function AuthPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-red-50 border border-red-200 rounded-xl">
+                <p className="text-red-600 text-xs sm:text-sm">{error}</p>
               </div>
             )}
 
@@ -373,11 +373,11 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-3 sm:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base"
+              className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-target"
             >
               {isSubmitting ? (
                 <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
                   {isLogin ? 'Signing In...' : 'Creating Account...'}
                 </div>
               ) : (
@@ -388,12 +388,12 @@ export default function AuthPage() {
 
           {/* Toggle Auth Mode */}
           <div className="text-center">
-            <p className="text-sm sm:text-base text-gray-600">
+            <p className="text-xs sm:text-sm lg:text-base text-gray-600">
               {isLogin ? "Don't have an account? " : "Already have an account? "}
               <button
                 type="button"
                 onClick={toggleAuthMode}
-                className="text-pink-600 font-semibold hover:text-pink-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-pink-600 font-semibold hover:text-pink-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
                 disabled={isSubmitting}
               >
                 {isLogin ? 'Sign Up' : 'Sign In'}

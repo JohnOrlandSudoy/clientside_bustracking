@@ -8,13 +8,13 @@ export default function Layout() {
   const { user } = useAuthAPI()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-white pb-24 sm:pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-white pb-28 sm:pb-24">
       {/* Header with Notification Bell */}
       {user && (
         <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-pink-100 shadow-sm safe-top">
-          <div className="max-w-lg mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <div className="max-w-lg mx-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 flex items-center justify-between">
             <div className="flex items-center">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-800">Bus Tracker</h1>
+              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">Bus Tracker</h1>
             </div>
             <div className="flex items-center gap-2">
               <NotificationBell />
@@ -24,7 +24,7 @@ export default function Layout() {
       )}
       
       {/* Main Content with proper mobile spacing */}
-      <main className="px-4 sm:px-6 max-w-lg mx-auto">
+      <main className="px-3 sm:px-4 lg:px-6 max-w-lg mx-auto">
         <Outlet />
       </main>
       
