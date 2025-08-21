@@ -4,7 +4,6 @@ import { Home, MapPin, Calendar, MessageCircle, User, LogOut, Bell } from 'lucid
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { useNotifications } from '../contexts/NotificationContext'
 
-
 export default function BottomNavigation() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -51,7 +50,7 @@ export default function BottomNavigation() {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-pink-100 px-4 py-2 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-pink-100 px-2 sm:px-4 py-2 z-50 safe-bottom">
       <div className="flex justify-around items-center max-w-lg mx-auto">
         {navItems.map(({ path, icon: Icon, label, key, requiresAuth, badge }) => {
           const isActive = location.pathname === path
@@ -61,12 +60,12 @@ export default function BottomNavigation() {
             <Link
               key={key}
               to={path}
-              className={`flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 relative ${
+              className={`flex flex-col items-center py-2 px-2 sm:px-3 rounded-lg transition-all duration-200 relative min-h-[60px] justify-center ${
                 isActive
-                  ? 'text-pink-600 bg-pink-50 scale-110'
+                  ? 'text-pink-600 bg-pink-50 scale-105 sm:scale-110'
                   : isDisabled
                   ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-gray-600 hover:text-pink-500 hover:bg-pink-25'
+                  : 'text-gray-600 hover:text-pink-500 hover:bg-pink-25 active:scale-95'
               }`}
               onClick={(e) => {
                 if (isDisabled) {
@@ -78,12 +77,12 @@ export default function BottomNavigation() {
                 <Icon size={20} className="mb-1" />
                 {/* Badge for notifications */}
                 {badge && typeof badge === 'number' && badge > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                     {badge > 99 ? '99+' : badge}
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium">{label}</span>
+              <span className="text-xs font-medium leading-tight">{label}</span>
               {isDisabled && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 bg-gray-300 rounded-full"></div>
               )}
@@ -95,10 +94,10 @@ export default function BottomNavigation() {
         {user && (
           <button
             onClick={handleLogout}
-            className="flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 text-red-600 hover:text-red-700 hover:bg-red-50"
+            className="flex flex-col items-center py-2 px-2 sm:px-3 rounded-lg transition-all duration-200 text-red-600 hover:text-red-700 hover:bg-red-50 active:scale-95 min-h-[60px] justify-center"
           >
             <LogOut size={20} className="mb-1" />
-            <span className="text-xs font-medium">Logout</span>
+            <span className="text-xs font-medium leading-tight">Logout</span>
           </button>
         )}
       </div>

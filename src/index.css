@@ -42,3 +42,89 @@
 .notification-low {
   border-left: 4px solid #6b7280;
 }
+
+/* Mobile-specific utilities */
+@layer utilities {
+  /* Safe area handling for mobile devices */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Touch-friendly button sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile-optimized scrolling */
+  .scroll-smooth-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Prevent text selection on mobile */
+  .no-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Mobile-optimized focus states */
+  .focus-mobile:focus {
+    outline: 2px solid #ec4899;
+    outline-offset: 2px;
+  }
+  
+  /* Mobile-optimized hover states */
+  @media (hover: hover) {
+    .hover-mobile:hover {
+      transform: translateY(-1px);
+    }
+  }
+  
+  /* Mobile-optimized active states */
+  .active-mobile:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Mobile-specific base styles */
+@layer base {
+  /* Prevent zoom on input focus for iOS */
+  @media screen and (max-width: 768px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="tel"],
+    input[type="number"],
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+  
+  /* Better touch scrolling for mobile */
+  body {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+  }
+  
+  /* Prevent horizontal scroll on mobile */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+}

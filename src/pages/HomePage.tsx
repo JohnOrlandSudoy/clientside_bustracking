@@ -41,13 +41,13 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="px-4 py-6 max-w-lg mx-auto">
+    <div className="px-4 sm:px-6 py-4 sm:py-6 max-w-lg mx-auto">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
           Welcome to Bus Tracker
         </h1>
-        <p className="text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600 px-2">
           {user ? (
             <>
               Hello, {user.profile?.fullName || user.username || user.email?.split('@')[0]}! 
@@ -61,14 +61,14 @@ export default function HomePage() {
 
       {/* Get Started Section - Only show if not logged in */}
       {!user && (
-        <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-6 text-white mb-8">
-          <h2 className="text-xl font-bold mb-2">Get Started</h2>
-          <p className="mb-4 opacity-90">
+        <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-4 sm:p-6 text-white mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold mb-2">Get Started</h2>
+          <p className="mb-4 opacity-90 text-sm sm:text-base">
             Sign in to access booking, feedback, and profile features.
           </p>
           <Link
             to="/auth"
-            className="inline-flex items-center bg-white text-pink-600 px-4 py-2 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200"
+            className="inline-flex items-center bg-white text-pink-600 px-4 py-3 sm:py-2 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200 text-sm sm:text-base"
           >
             Sign In
             <ArrowRight size={16} className="ml-2" />
@@ -77,7 +77,7 @@ export default function HomePage() {
       )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {quickActions.map((action) => {
           const Icon = action.icon
           const isDisabled = action.requiresAuth && !user
@@ -86,7 +86,7 @@ export default function HomePage() {
             <Link
               key={action.title}
               to={action.path}
-              className={`block p-6 rounded-2xl bg-gradient-to-br ${action.color} text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ${
+              className={`block p-4 sm:p-6 rounded-2xl bg-gradient-to-br ${action.color} text-white shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-200 min-h-[120px] sm:min-h-[140px] flex flex-col justify-between ${
                 isDisabled ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               onClick={(e) => {
@@ -95,33 +95,35 @@ export default function HomePage() {
                 }
               }}
             >
-              <Icon size={24} className="mb-3" />
-              <h3 className="font-semibold mb-1">{action.title}</h3>
-              <p className="text-sm opacity-90">{action.description}</p>
+              <div>
+                <Icon size={20} className="mb-2 sm:mb-3" />
+                <h3 className="font-semibold mb-1 text-sm sm:text-base">{action.title}</h3>
+                <p className="text-xs sm:text-sm opacity-90 leading-tight">{action.description}</p>
+              </div>
             </Link>
           )
         })}
       </div>
 
       {/* Features */}
-      <div className="space-y-4">
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Real-time Tracking</h3>
-          <p className="text-gray-600">
+      <div className="space-y-3 sm:space-y-4">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Real-time Tracking</h3>
+          <p className="text-sm sm:text-base text-gray-600">
             Get live updates on bus locations and arrival times.
           </p>
         </div>
         
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Easy Booking</h3>
-          <p className="text-gray-600">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">Easy Booking</h3>
+          <p className="text-sm sm:text-base text-gray-600">
             Reserve your seat in advance with our simple booking system.
           </p>
         </div>
         
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">User Feedback</h3>
-          <p className="text-gray-600">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">User Feedback</h3>
+          <p className="text-sm sm:text-base text-gray-600">
             Help us improve by sharing your experience and suggestions.
           </p>
         </div>

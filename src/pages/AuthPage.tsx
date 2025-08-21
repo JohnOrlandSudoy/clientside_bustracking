@@ -171,24 +171,24 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white px-4 sm:px-6 py-6 sm:py-8">
+      <div className="w-full max-w-md mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="bg-gradient-to-r from-pink-500 to-pink-400 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="bg-gradient-to-r from-pink-500 to-pink-400 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <User className="text-white" size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600 px-2">
             {isLogin ? 'Sign in to track your buses' : 'Join us for better commuting'}
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-pink-100">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-pink-100">
             {/* Email Field */}
             <div className="mb-4">
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -202,7 +202,7 @@ export default function AuthPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
                   placeholder="Enter your email"
                   required
                   disabled={isSubmitting}
@@ -224,7 +224,7 @@ export default function AuthPage() {
                     name="username"
                     value={formData.username}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
                     placeholder="Choose a username"
                     required={!isLogin}
                     disabled={isSubmitting}
@@ -247,7 +247,7 @@ export default function AuthPage() {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
                     placeholder="Enter your full name"
                     required={!isLogin}
                     disabled={isSubmitting}
@@ -270,7 +270,7 @@ export default function AuthPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
                     placeholder="+63 912 345 6789"
                     required={!isLogin}
                     pattern="^(\+63|0)?[9]\d{9}$"
@@ -294,7 +294,7 @@ export default function AuthPage() {
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer disabled:cursor-not-allowed"
+                    className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer disabled:cursor-not-allowed text-base"
                     required={!isLogin}
                     disabled={isSubmitting}
                   >
@@ -323,7 +323,7 @@ export default function AuthPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
+                  className="w-full pl-10 pr-12 py-3 sm:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-base"
                   placeholder="Enter your password"
                   required
                   minLength={6}
@@ -332,7 +332,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 disabled:opacity-50"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 disabled:opacity-50 p-1"
                   disabled={isSubmitting}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -341,16 +341,16 @@ export default function AuthPage() {
               
               {/* Password Requirements */}
               {!isLogin && (
-                <div className="mt-2 text-xs text-gray-500">
-                  <div className="flex items-center mb-1">
+                <div className="mt-3 text-xs text-gray-500 space-y-1">
+                  <div className="flex items-center">
                     <div className={`w-2 h-2 rounded-full mr-2 ${formData.password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     At least 6 characters
                   </div>
-                  <div className="flex items-center mb-1">
+                  <div className="flex items-center">
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[A-Z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     One uppercase letter
                   </div>
-                  <div className="flex items-center mb-1">
+                  <div className="flex items-center">
                     <div className={`w-2 h-2 rounded-full mr-2 ${/[a-z]/.test(formData.password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                     One lowercase letter
                   </div>
@@ -373,7 +373,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-3 sm:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               {isSubmitting ? (
                 <div className="flex items-center justify-center">
@@ -388,7 +388,7 @@ export default function AuthPage() {
 
           {/* Toggle Auth Mode */}
           <div className="text-center">
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               {isLogin ? "Don't have an account? " : "Already have an account? "}
               <button
                 type="button"
@@ -404,18 +404,18 @@ export default function AuthPage() {
 
         {/* Email Confirmation Section */}
         {emailConfirmation && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg border border-green-100 mt-6">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-green-100 mt-4 sm:mt-6">
             <div className="text-center">
-              <div className="bg-gradient-to-r from-green-500 to-green-400 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <div className="bg-gradient-to-r from-green-500 to-green-400 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <Mail className="text-white" size={32} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">
                 Please Confirm Your Email
               </h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-sm sm:text-base text-gray-600 mb-4 px-2">
                 We've sent a confirmation email to <span className="text-green-600 font-semibold">{formData.email}</span>
               </p>
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
                 <p className="text-green-700 text-sm">
                   📧 Check your inbox and click the confirmation link to activate your account.
                 </p>
@@ -428,14 +428,14 @@ export default function AuthPage() {
                     setIsLogin(true)
                     resetForm()
                   }}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-400 text-white py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+                  className="w-full bg-gradient-to-r from-green-500 to-green-400 text-white py-3 sm:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 text-base"
                 >
                   Continue to Sign In
                 </button>
                 <button
                   type="button"
                   onClick={() => setEmailConfirmation(false)}
-                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200"
+                  className="w-full bg-gray-100 text-gray-700 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200 text-base"
                 >
                   Back to Sign Up
                 </button>
@@ -446,7 +446,7 @@ export default function AuthPage() {
 
         {/* Debug Section - Only show in development */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="bg-gray-100 rounded-2xl p-4 mt-6">
+          <div className="bg-gray-100 rounded-2xl p-4 mt-4 sm:mt-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-3">🔧 Debug Info</h3>
             <div className="space-y-2 text-sm text-gray-600">
               <div>User: {user ? 'Authenticated' : 'Not authenticated'}</div>
