@@ -1,32 +1,80 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserCheck } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 
 export default function AuthPage() {
-  const { user, signUp, signIn, loading } = useAuthAPI()
+  const { user, signUp, signIn, loading, isInitialized, forceReset, shouldRedirect, clearRedirectFlag } = useAuthAPI()
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
-  const [emailConfirmation, setEmailConfirmation] = useState(false) // Add email confirmation state
+  const [emailConfirmation, setEmailConfirmation] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     username: '',
     fullName: '',
     phone: '',
-    role: '', // Add role field
+    role: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  if (user) {
+  // Reset form when user signs out (when user changes from authenticated to null)
+  useEffect(() => {
+    if (!user && isInitialized) {
+      // User is not authenticated, ensure form is accessible
+      setError('')
+      setIsSubmitting(false)
+      setEmailConfirmation(false)
+      console.log('AuthPage: User not authenticated, form should be accessible')
+    }
+  }, [user, isInitialized])
+
+  // Handle redirect flag from sign out
+  useEffect(() => {
+    if (shouldRedirect) {
+      // Clear the redirect flag since we're already on the auth page
+      clearRedirectFlag()
+    }
+  }, [shouldRedirect, clearRedirectFlag])
+
+  // Debug logging to understand state
+  useEffect(() => {
+    console.log('AuthPage State:', {
+      user: user ? 'Authenticated' : 'Not authenticated',
+      loading,
+      isInitialized,
+      isSubmitting,
+      error: error || 'None'
+    })
+  }, [user, loading, isInitialized, isSubmitting, error])
+
+  // Show loading spinner only during initial authentication check
+  // Don't show loading if user is not authenticated and we're initialized
+  if (loading && !isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-pink-200 border-t-pink-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Only redirect if user is authenticated and initialization is complete
+  if (user && isInitialized) {
     return <Navigate to="/" replace />
   }
 
-  if (loading) {
+  // If not initialized yet, show a minimal loading state
+  if (!isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white">
-        <div className="w-12 h-12 border-4 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-pink-200 border-t-pink-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
       </div>
     )
   }
@@ -78,7 +126,7 @@ export default function AuthPage() {
           formData.username,
           formData.fullName,
           formData.phone,
-          formData.role // Add role parameter
+          formData.role
         )
       }
 
@@ -102,10 +150,10 @@ export default function AuthPage() {
       username: '',
       fullName: '',
       phone: '',
-      role: '', // Add role to reset
+      role: '',
     })
     setError('')
-    setEmailConfirmation(false) // Reset email confirmation state
+    setEmailConfirmation(false)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -113,6 +161,13 @@ export default function AuthPage() {
       ...prev,
       [e.target.name]: e.target.value
     }))
+  }
+
+  // Reset form when switching between login/signup modes
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin)
+    setEmailConfirmation(false)
+    resetForm()
   }
 
   return (
@@ -150,6 +205,7 @@ export default function AuthPage() {
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your email"
                   required
+                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -171,6 +227,7 @@ export default function AuthPage() {
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
                     placeholder="Choose a username"
                     required={!isLogin}
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -193,6 +250,7 @@ export default function AuthPage() {
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200"
                     placeholder="Enter your full name"
                     required={!isLogin}
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -217,6 +275,7 @@ export default function AuthPage() {
                     required={!isLogin}
                     pattern="^(\+63|0)?[9]\d{9}$"
                     title="Please enter a valid Philippine mobile number (e.g., +639123456789 or 09123456789)"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>
@@ -235,8 +294,9 @@ export default function AuthPage() {
                     name="role"
                     value={formData.role}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer disabled:cursor-not-allowed"
                     required={!isLogin}
+                    disabled={isSubmitting}
                   >
                     <option value="">Select your role</option>
                     <option value="passenger">🚌 Passenger</option>
@@ -267,11 +327,13 @@ export default function AuthPage() {
                   placeholder="Enter your password"
                   required
                   minLength={6}
+                  disabled={isSubmitting}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 disabled:opacity-50"
+                  disabled={isSubmitting}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -330,12 +392,9 @@ export default function AuthPage() {
               {isLogin ? "Don't have an account? " : "Already have an account? "}
               <button
                 type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin)
-                  setEmailConfirmation(false) // Reset email confirmation when switching modes
-                  resetForm()
-                }}
-                className="text-pink-600 font-semibold hover:text-pink-700 transition-colors duration-200"
+                onClick={toggleAuthMode}
+                className="text-pink-600 font-semibold hover:text-pink-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
                 {isLogin ? 'Sign Up' : 'Sign In'}
               </button>
@@ -354,7 +413,7 @@ export default function AuthPage() {
                 Please Confirm Your Email
               </h2>
               <p className="text-gray-600 mb-4">
-                We've sent a confirmation email to <span className="font-semibold text-green-600">{formData.email}</span>
+                We've sent a confirmation email to <span className="text-green-600 font-semibold">{formData.email}</span>
               </p>
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
                 <p className="text-green-700 text-sm">
@@ -381,6 +440,37 @@ export default function AuthPage() {
                   Back to Sign Up
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Debug Section - Only show in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-gray-100 rounded-2xl p-4 mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">🔧 Debug Info</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div>User: {user ? 'Authenticated' : 'Not authenticated'}</div>
+              <div>Loading: {loading ? 'Yes' : 'No'}</div>
+              <div>Initialized: {isInitialized ? 'Yes' : 'No'}</div>
+              <div>Form State: {isSubmitting ? 'Submitting' : 'Ready'}</div>
+              <div>Mode: {isLogin ? 'Sign In' : 'Sign Up'}</div>
+              <div>Should Redirect: {shouldRedirect ? 'Yes' : 'No'}</div>
+            </div>
+            <div className="mt-3 space-y-2">
+              <button
+                onClick={forceReset}
+                className="w-full bg-red-500 text-white py-2 rounded-lg text-sm hover:bg-red-600 transition-colors"
+              >
+                Force Reset Auth State
+              </button>
+              <button
+                onClick={() => {
+                  console.log('Current Auth State:', { user, loading, isInitialized, token: localStorage.getItem('auth_token'), shouldRedirect })
+                }}
+                className="w-full bg-blue-500 text-white py-2 rounded-lg text-sm hover:bg-blue-600 transition-colors"
+              >
+                Log Auth State to Console
+              </button>
             </div>
           </div>
         )}

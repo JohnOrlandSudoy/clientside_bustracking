@@ -8,12 +8,14 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuthAPI()
+  const { user, loading, isInitialized } = useAuthAPI()
 
-  if (loading) {
+  // Show loading spinner while checking authentication
+  if (loading || !isInitialized) {
     return <LoadingSpinner />
   }
 
+  // Only redirect if authentication check is complete and user is not authenticated
   if (!user) {
     return <Navigate to="/auth" replace />
   }

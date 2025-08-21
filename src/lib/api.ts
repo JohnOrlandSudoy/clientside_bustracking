@@ -1,5 +1,5 @@
 // API service for authentication
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbus-sumt.onrender.com/api'
 
 export interface SignUpData {
   email: string
@@ -216,15 +216,14 @@ class AuthAPI {
         }
       }
 
-      // Since your backend doesn't have /auth/me endpoint, we'll use a fallback approach
-      // Try to make a request to validate the token, but don't fail if endpoint doesn't exist
+      // Try to validate the token with the backend
       try {
         const response = await this.makeRequest<any>('/auth/me', {
           method: 'GET',
         })
 
-        // Handle Supabase response shape
-        if (response.user) {
+        // Handle successful response
+        if (response && response.user) {
           return {
             success: true,
             message: 'User retrieved successfully',
@@ -232,10 +231,10 @@ class AuthAPI {
               user: {
                 id: response.user.id,
                 email: response.user.email,
-                username: response.user.user_metadata?.username || '',
-                role: response.user.user_metadata?.role || response.user.role,
+                username: response.user.user_metadata?.username || response.user.username || '',
+                role: response.user.user_metadata?.role || response.user.role || 'user',
                 profile: {
-                  fullName: response.user.user_metadata?.fullName || '',
+                  fullName: response.user.user_metadata?.fullName || response.user.fullName || '',
                   phone: response.user.user_metadata?.phone || response.user.phone || ''
                 }
               },
@@ -245,35 +244,48 @@ class AuthAPI {
         }
 
         // Handle custom API response shape
-        if (response.success !== undefined) {
+        if (response && response.success !== undefined) {
           return response
         }
 
-        // Fallback
+        // If response doesn't have expected structure, return error
         return {
-          success: true,
-          message: 'User retrieved successfully',
-          data: response
+          success: false,
+          message: 'Invalid user data format',
+          error: 'User data format is not as expected'
         }
+
       } catch (error) {
-        // If /auth/me doesn't exist (404), we'll assume the token is valid
-        // and return a success response with basic user info
-        console.warn('Auth endpoint /auth/me not available, using token validation fallback')
+        // If /auth/me endpoint doesn't exist or returns an error
+        console.warn('Auth endpoint /auth/me not available or failed:', error)
         
-        // Try to decode the JWT token to get basic user info
+        // Try to decode the JWT token to validate it's not expired
         try {
           const tokenPayload = JSON.parse(atob(storedToken.split('.')[1]))
+          const currentTime = Date.now() / 1000
+          
+          // Check if token is expired
+          if (tokenPayload.exp && tokenPayload.exp < currentTime) {
+            return {
+              success: false,
+              message: 'Token expired',
+              error: 'Authentication token has expired'
+            }
+          }
+
+          // If token is valid but we can't get user data from backend,
+          // return a limited success response
           return {
             success: true,
-            message: 'Token validation successful',
+            message: 'Token validation successful (limited user data)',
             data: {
               user: {
-                id: tokenPayload.sub || 'user-id',
-                email: tokenPayload.email || 'user@example.com',
-                username: tokenPayload.user_metadata?.username || 'user',
+                id: tokenPayload.sub || tokenPayload.id || 'unknown',
+                email: tokenPayload.email || 'unknown@email.com',
+                username: tokenPayload.user_metadata?.username || tokenPayload.username || 'user',
                 role: tokenPayload.user_metadata?.role || tokenPayload.role || 'user',
                 profile: {
-                  fullName: tokenPayload.user_metadata?.fullName || 'User',
+                  fullName: tokenPayload.user_metadata?.fullName || tokenPayload.fullName || 'User',
                   phone: tokenPayload.user_metadata?.phone || tokenPayload.phone || ''
                 }
               },
@@ -281,33 +293,19 @@ class AuthAPI {
             }
           }
         } catch (decodeError) {
-          // If we can't decode the token, return a basic user object
+          // If we can't decode the token at all, it's invalid
           return {
-            success: true,
-            message: 'Token validation successful',
-            data: {
-              user: {
-                id: 'user-id',
-                email: 'user@example.com',
-                username: 'user',
-                role: 'user',
-                profile: {
-                  fullName: 'User',
-                  phone: ''
-                }
-              },
-              token: storedToken
-            }
+            success: false,
+            message: 'Invalid token format',
+            error: 'Authentication token is malformed or invalid'
           }
         }
       }
     } catch (error) {
-      // If the API call fails, clear the token and return error
-      localStorage.removeItem('auth_token')
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Failed to get user',
-        error: error instanceof Error ? error.message : 'Failed to get user'
+        message: 'Failed to get current user',
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       }
     }
   }
