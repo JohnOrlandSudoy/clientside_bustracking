@@ -83,12 +83,9 @@ const BusMapContent = ({
             position: userLocation,
             map: map,
             icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: "#EF4444",
-              fillOpacity: 0.8,
-              strokeColor: "#FFFFFF",
-              strokeWeight: 3,
-              scale: 20,
+              url: '/user-pin.png',
+              scaledSize: new google.maps.Size(40, 40),
+              anchor: new google.maps.Point(20, 40)
             },
             title: "Your location"
           });
@@ -190,12 +187,9 @@ const BusMapContent = ({
           <Marker
             position={userLocation}
             icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: "#10B981",
-              fillOpacity: 0.2,
-              strokeColor: "#10B981",
-              strokeWeight: 2,
-              scale: 30,
+              url: '/user-pin.png',
+              scaledSize: new google.maps.Size(40, 40),
+              anchor: new google.maps.Point(20, 40) // Center the pin point at the location
             }}
           />
           
@@ -209,12 +203,9 @@ const BusMapContent = ({
               fontSize: "14px"
             }}
             icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: "#10B981", // Green color for live tracking
-              fillOpacity: 1,
-              strokeColor: "#FFFFFF", // White border
-              strokeWeight: 3,
-              scale: 18, // Larger size for prominence
+              url: '/user-pin.png',
+              scaledSize: new google.maps.Size(32, 32),
+              anchor: new google.maps.Point(16, 32) // Center the pin point at the location
             }}
             title="🚌 LIVE TRACKING - Your Current Location"
             onClick={() => {
@@ -230,12 +221,9 @@ const BusMapContent = ({
           <Marker
             position={userLocation}
             icon={{
-              path: google.maps.SymbolPath.CIRCLE,
-              fillColor: "#FFFFFF",
-              fillOpacity: 0.9,
-              strokeColor: "#10B981",
-              strokeWeight: 1,
-              scale: 8,
+              url: '/user-pin.png',
+              scaledSize: new google.maps.Size(24, 24),
+              anchor: new google.maps.Point(12, 24) // Center the pin point at the location
             }}
           />
         </>
