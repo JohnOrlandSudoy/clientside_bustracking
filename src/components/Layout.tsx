@@ -14,7 +14,7 @@ export default function Layout() {
         <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-pink-100 shadow-sm safe-top">
           <div className="max-w-lg mx-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 flex items-center justify-between">
             <div className="flex items-center">
-              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">Bus Tracker</h1>
+              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">Auro Ride</h1>
             </div>
             <div className="flex items-center gap-2">
               <NotificationBell />

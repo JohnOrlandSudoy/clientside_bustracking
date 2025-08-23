@@ -576,7 +576,7 @@ export default function TrackerPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">Bus Tracker</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">Auro Ride</h1>
           <p className="text-xs sm:text-sm lg:text-base text-gray-600">Real-time location updates</p>
         </div>
         <div className="flex gap-2 flex-shrink-0">

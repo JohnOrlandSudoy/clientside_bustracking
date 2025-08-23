@@ -45,7 +45,7 @@ export default function HomePage() {
       {/* Header */}
       <div className="text-center mb-4 sm:mb-6 lg:mb-8">
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
-          Welcome to Bus Tracker
+          Welcome to Auro Ride
         </h1>
         <p className="text-xs sm:text-sm lg:text-base text-gray-600 px-1 sm:px-2">
           {user ? (

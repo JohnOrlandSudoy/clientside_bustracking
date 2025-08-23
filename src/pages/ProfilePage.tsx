@@ -268,7 +268,7 @@ export default function ProfilePage() {
 
       {/* App Info */}
       <div className="text-center mt-4 sm:mt-6 lg:mt-8 text-gray-500 text-xs sm:text-sm">
-        <p>Bus Tracker App v1.0</p>
+        <p>AuroRide App v1.0</p>
         <p>Made with ❤️ for better commuting</p>
       </div>
     </div>
