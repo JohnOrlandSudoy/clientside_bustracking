@@ -127,12 +127,12 @@ export function useAuthAPI() {
     }
   }, [isTokenExpired, validateSession, user, token, refreshSession])
 
-  const signUp = async (email: string, password: string, username: string, fullName: string, phone: string, role: string) => {
+  const signUp = async (email: string, password: string, username: string, fullName: string, phone: string) => {
     const signUpData: SignUpData = {
       email,
       password,
       username,
-      role: role,
+      role: 'client', // Force role to be 'client' for client authentication
       profile: {
         fullName,
         phone,

@@ -14,7 +14,6 @@ export default function AuthPage() {
     username: '',
     fullName: '',
     phone: '',
-    role: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -90,8 +89,8 @@ export default function AuthPage() {
         result = await signIn(formData.email, formData.password)
       } else {
         // Validate required fields for signup
-        if (!formData.username || !formData.fullName || !formData.phone || !formData.role) {
-          setError('Please fill in all required fields including role selection')
+        if (!formData.username || !formData.fullName || !formData.phone) {
+          setError('Please fill in all required fields')
           setIsSubmitting(false)
           return
         }
@@ -125,8 +124,7 @@ export default function AuthPage() {
           formData.password,
           formData.username,
           formData.fullName,
-          formData.phone,
-          formData.role
+          formData.phone
         )
       }
 
@@ -150,7 +148,6 @@ export default function AuthPage() {
       username: '',
       fullName: '',
       phone: '',
-      role: '',
     })
     setError('')
     setEmailConfirmation(false)
@@ -179,10 +176,10 @@ export default function AuthPage() {
             <User className="text-white" size={28} />
           </div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+            {isLogin ? 'Welcome Back' : 'Create Client Account'}
           </h1>
           <p className="text-xs sm:text-sm lg:text-base text-gray-600 px-1 sm:px-2">
-            {isLogin ? 'Sign in to track your buses' : 'Join us for better commuting'}
+            {isLogin ? 'Sign in to track your buses' : 'Join us as a client for better commuting'}
           </p>
         </div>
 
@@ -281,35 +278,6 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* Role Selection Field (Signup only) */}
-            {!isLogin && (
-              <div className="mb-3 sm:mb-4">
-                <label htmlFor="role" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                  User Role
-                </label>
-                <div className="relative">
-                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <select
-                    id="role"
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className="w-full pl-9 sm:pl-10 pr-8 sm:pr-10 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer disabled:cursor-not-allowed text-sm sm:text-base touch-target"
-                    required={!isLogin}
-                    disabled={isSubmitting}
-                  >
-                    <option value="">Select your role</option>
-                    <option value="passenger">🚌 Passenger</option>
-                    <option value="driver">🚗 Driver</option>
-                    <option value="admin">👑 Admin</option>
-                  </select>
-                  <svg className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M6 9l6 6 6-6"/>
-                  </svg>
-                </div>
-              </div>
-            )}
-
             {/* Password Field */}
             <div className="mb-4 sm:mb-6">
               <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
@@ -378,10 +346,10 @@ export default function AuthPage() {
               {isSubmitting ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
-                  {isLogin ? 'Signing In...' : 'Creating Account...'}
+                  {isLogin ? 'Signing In...' : 'Creating Client Account...'}
                 </div>
               ) : (
-                isLogin ? 'Sign In' : 'Create Account'
+                isLogin ? 'Sign In' : 'Create Client Account'
               )}
             </button>
           </div>
