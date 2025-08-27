@@ -11,6 +11,291 @@ A modern, responsive bus tracking system with real-time updates, seat booking, a
 - **Mobile-First Design** - Optimized for touch devices
 - **Premium UI/UX** - Pinkish-white aesthetic with smooth animations
 
+## 🎯 Core Features & How They Work
+
+### 1. Authentication System
+**Files**: `src/pages/AuthPage.tsx`, `src/hooks/useAuthAPI.ts`, `src/lib/api.ts`
+
+**How it works**:
+- **Client-only authentication** (no admin/driver roles)
+- JWT token-based authentication with localStorage
+- Automatic token expiration checking (validates JWT payload)
+- Session refresh every 5 minutes to maintain active session
+- Protected routes for authenticated features (booking, feedback, profile)
+- Automatic redirect after successful authentication
+
+**API Integration**:
+- `POST /api/auth/signup` - Client registration with profile data
+- `POST /api/auth/login` - Client login with email/password
+- `GET /api/auth/me` - Validate current user session
+- `POST /api/auth/logout` - Secure logout with token cleanup
+
+**Security Features**:
+- Password validation (uppercase, lowercase, numbers, 6+ characters)
+- Token-based session management
+- Automatic session timeout handling
+- Protected route guards
+
+### 2. Bus Tracking System
+**Files**: `src/pages/TrackerPage.tsx`, `src/contexts/BusTrackingContext.tsx`, `src/components/tracker/`
+
+**How it works**:
+- **Real-time bus location tracking** using Google Maps API
+- **ETA calculations** for bus arrivals with live updates
+- **Route visualization** with start/end terminals and waypoints
+- **User location integration** with browser geolocation API
+- **Auto-refresh** every 30 seconds for live data updates
+- **Mock data fallback** when API is unavailable
+
+**Key Components**:
+- `BusMap.tsx` - Google Maps integration with custom bus markers
+- `BusSelector.tsx` - Dropdown to select specific buses with filtering
+- `BusDetails.tsx` - Detailed bus information card with real-time data
+- `RouteDetails.tsx` - Route information and terminal details
+- `LoadingSpinner.tsx` - Loading states during data fetching
+
+**Real-time Features**:
+- Live bus position updates
+- Estimated arrival times
+- Seat availability tracking
+- Route progress indicators
+
+### 3. Notification System
+**Files**: `src/contexts/NotificationContext.tsx`, `src/components/NotificationBell.tsx`
+
+**How it works**:
+- **Real-time notifications** with sound alerts and visual badges
+- **Unread count badges** on navigation with animated indicators
+- **Auto-refresh** every 30 seconds with throttling to prevent API spam
+- **Smart caching** with local storage for offline viewing
+- **Mark as read** functionality with optimistic UI updates
+
+**Features**:
+- Notification sound playback for new alerts
+- Unread count display in bottom navigation
+- Pull-to-refresh for manual updates
+- Notification history with search/filter
+- Batch operations (mark all as read)
+
+### 4. Booking System
+**Files**: `src/pages/BookingPage.tsx`, `src/lib/api.ts`
+
+**How it works**:
+- **Interactive seat selection** with real-time availability
+- **Booking validation** to prevent double bookings
+- **Booking confirmation** with email notifications (if implemented)
+- **Booking history** with status tracking
+- **Payment integration ready** structure
+
+**Features**:
+- Visual seat map with availability indicators
+- Maximum seat selection limits
+- Booking confirmation with QR codes
+- Trip cancellation and modification
+- Booking receipts and invoices
+
+### 5. Feedback System
+**Files**: `src/pages/FeedbackPage.tsx`
+
+**How it works**:
+- **5-star rating system** with descriptive labels
+- **Comment submission** with character limits and validation
+- **Feedback moderation** for inappropriate content
+- **Analytics dashboard** for service improvement insights
+
+**Rating Categories**:
+- ⭐ Poor - Needs significant improvement
+- ⭐⭐ Fair - Below expectations  
+- ⭐⭐⭐ Good - Met expectations
+- ⭐⭐⭐⭐ Very Good - Exceeded expectations
+- ⭐⭐⭐⭐⭐ Excellent - Outstanding service
+
+### 6. State Management Architecture
+**Files**: `src/contexts/`, `src/hooks/`
+
+**How it works**:
+- **Context-based global state** for shared data
+- **Custom hooks** for reusable logic and API calls
+- **Optimistic UI updates** for better user experience
+- **Error boundaries** for graceful error handling
+
+**Context Providers**:
+```typescript
+<NotificationProvider>
+  <BusTrackingProvider>
+    <Router>
+      <AppContent />
+    </Router>
+  </BusTrackingProvider>
+</NotificationProvider>
+```
+
+## 🚀 Demo Flow - Step-by-Step Guide
+
+### **Prerequisites Setup**
+```bash
+# 1. Clone and install dependencies
+git clone <repository-url>
+cd clientSide
+npm install
+
+# 2. Set up environment variables
+# Create .env file with:
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+VITE_API_BASE_URL=https://backendbus-sumt.onrender.com/api
+
+# 3. Start development server
+npm run dev
+# Navigate to http://localhost:5173
+```
+
+### **Phase 1: Initial Experience (Unauthenticated User)**
+
+#### **1. Homepage Landing** (`/`)
+```
+✅ Welcome message: "Welcome to Auro Ride"
+✅ "Get Started" section prompting sign-in
+✅ Quick action cards:
+   - 🚍 Track Bus (available without auth)
+   - 🎫 Book Trip (requires sign-in)
+   - 💬 Send Feedback (requires sign-in)
+   - 👤 View Profile (requires sign-in)
+✅ Responsive design across all devices
+```
+
+#### **2. Bus Tracking Demo** (`/tracker`)
+```
+✅ Interactive Google Maps interface
+✅ Mock bus locations (BUS001, BUS002) with live updates
+✅ Real-time ETA updates every 30 seconds
+✅ Bus selector dropdown with filtering
+✅ User location integration (request permission)
+✅ Route visualization between terminals
+✅ Pull-to-refresh functionality
+```
+
+### **Phase 2: Authentication Process**
+
+#### **3. Sign Up Process** (`/auth`)
+```
+✅ Click "Sign Up" or any protected feature
+✅ Fill registration form:
+   - 📧 Email: test0101yourdev@gmail.com
+   - 🔒 Password: pPPassword123 (with validation)
+   - 👤 Username: client user
+   - 📝 Full Name: user client
+   - 📱 Phone: 09171234567
+✅ Password validation indicators:
+   - ✓ At least 6 characters
+   - ✓ One uppercase letter
+   - ✓ One lowercase letter
+   - ✓ One number
+✅ Email confirmation message appears
+✅ Automatic redirect to homepage after success
+```
+
+#### **4. Sign In Process**
+```
+✅ Use registered credentials
+✅ Form validation and error handling
+✅ Automatic redirect to homepage
+✅ Token stored securely in localStorage
+✅ User state updated throughout app
+✅ Session persistence across browser refreshes
+```
+
+### **Phase 3: Authenticated Features**
+
+#### **5. Enhanced Homepage** (After Login)
+```
+✅ Personalized welcome: "Hello, user client!"
+✅ All quick actions now accessible
+✅ Notification badge (shows unread count)
+✅ User-specific content and recommendations
+✅ Enhanced navigation with auth-protected routes
+```
+
+#### **6. Booking System** (`/booking`)
+```
+✅ Available buses list with real-time data
+✅ Interactive seat selection interface
+✅ Booking validation and confirmation
+✅ Booking history with status tracking
+✅ Trip details and management options
+✅ Payment integration ready structure
+```
+
+#### **7. Feedback System** (`/feedback`)
+```
+✅ Rate previous trips (1-5 stars with descriptions)
+✅ Text comment submission (500 char limit)
+✅ Feedback history viewing
+✅ Recent reviews from other users
+✅ Feedback analytics and insights
+```
+
+#### **8. Notification Center** (`/notifications`)
+```
+✅ Real-time notification list with timestamps
+✅ Mark individual notifications as read
+✅ Mark all as read functionality
+✅ Sound alerts for new notifications
+✅ Notification preferences and settings
+✅ Push notification support (if implemented)
+```
+
+#### **9. User Profile** (`/profile`)
+```
+✅ User information display and editing
+✅ Trip statistics and analytics dashboard
+✅ Recent booking history with details
+✅ Account settings and preferences
+✅ App information and version details
+✅ Secure logout functionality
+```
+
+### **Phase 4: Advanced Features**
+
+#### **10. Enhanced Bus Tracking** (After Login)
+```
+✅ Personalized tracking experience
+✅ Favorite buses and routes
+✅ Historical tracking data and analytics
+✅ Custom notifications for specific buses
+✅ Advanced filtering and search options
+✅ Offline map support with cached data
+```
+
+#### **11. Logout Process**
+```
+✅ Click logout in bottom navigation
+✅ Automatic cleanup of authentication state
+✅ Clear local storage and session data
+✅ Redirect to auth page
+✅ All protected features become inaccessible
+✅ Session timeout handling
+```
+
+### **Phase 5: Edge Cases & Error Handling**
+
+#### **12. Network Failure Handling**
+```
+✅ Graceful error messages for API failures
+✅ Offline mode with cached data
+✅ Retry mechanisms for failed requests
+✅ Loading states and skeleton screens
+✅ Fallback to mock data when needed
+```
+
+#### **13. Browser Compatibility**
+```
+✅ Works on all modern browsers
+✅ Mobile Safari and Chrome optimization
+✅ Progressive Web App features
+✅ Offline capability with service workers
+✅ Touch-friendly interactions
+```
+
 ## 🎨 Design System
 
 ### Color Palette
