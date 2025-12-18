@@ -64,15 +64,23 @@ export default function HomePage() {
         <div className="bg-gradient-to-r from-pink-500 to-pink-400 rounded-2xl p-3 sm:p-4 lg:p-6 text-white mb-4 sm:mb-6 lg:mb-8">
           <h2 className="text-base sm:text-lg lg:text-xl font-bold mb-2">Get Started</h2>
           <p className="mb-3 sm:mb-4 opacity-90 text-xs sm:text-sm lg:text-base">
-            Sign in to access booking, feedback, and profile features.
+            Sign in or sign up to access booking, feedback, and profile features.
           </p>
-          <Link
-            to="/auth"
-            className="inline-flex items-center bg-white text-pink-600 px-3 sm:px-4 py-2.5 sm:py-3 lg:py-2 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200 text-xs sm:text-sm lg:text-base touch-target"
-          >
-            Sign In
-            <ArrowRight size={14} className="ml-2" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/auth?mode=signin"
+              className="inline-flex items-center bg-white text-pink-600 px-3 sm:px-4 py-2.5 sm:py-3 lg:py-2 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200 text-xs sm:text-sm lg:text-base touch-target"
+            >
+              Sign In
+              <ArrowRight size={14} className="ml-2" />
+            </Link>
+            <Link
+              to="/auth?mode=signup"
+              className="inline-flex items-center bg-white/10 border border-white/30 text-white px-3 sm:px-4 py-2.5 sm:py-3 lg:py-2 rounded-xl font-semibold hover:bg-white/20 transition-colors duration-200 text-xs sm:text-sm lg:text-base touch-target"
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
       )}
 
@@ -128,6 +136,8 @@ export default function HomePage() {
           </p>
         </div>
       </div>
+
+      {/* Subscription section removed */}
     </div>
   )
 }

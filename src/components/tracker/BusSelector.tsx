@@ -21,9 +21,6 @@ const BusSelector: React.FC<BusSelectorProps> = ({
   onETAClick,
   onBookNow
 }) => {
-  // Ref for scrolling the map into view
-  const mapSectionRef = React.useRef<HTMLDivElement | null>(null);
-
   // Scroll to map when a bus is selected
   const handleSelectBus = (bus: Bus) => {
     onSelectBus(bus);
@@ -83,23 +80,16 @@ const BusSelector: React.FC<BusSelectorProps> = ({
                   </div>
                   
                   {/* Book Now Button */}
-                  <span
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onBookNow(bus.id);
                     }}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.stopPropagation();
-                        onBookNow(bus.id);
-                      }
-                    }}
                     className="inline-block text-xs sm:text-sm text-white bg-gradient-to-r from-pink-500 to-pink-400 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg hover:shadow-md transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-pink-400 touch-target"
                   >
                     Book Now
-                  </span>
+                  </button>
                 </div>
                 
                 {/* Right side info - Bus number and ID */}

@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthAPI } from './hooks/useAuthAPI'
+import DevWarning from './components/DevWarning'
 import { BusTrackingProvider } from './contexts/BusTrackingContext'
 import { NotificationProvider } from './contexts/NotificationContext'
 import Layout from './components/Layout'
@@ -10,9 +11,11 @@ import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
 import TrackerPage from './pages/TrackerPage'
 import BookingPage from './pages/BookingPage'
+import BookingSuccessPage from './pages/BookingSuccessPage'
 import FeedbackPage from './pages/FeedbackPage'
 import ProfilePage from './pages/ProfilePage'
 import NotificationsPage from './pages/NotificationsPage'
+import BookingDetailsPage from './pages/BookingDetailsPage'
 
 // Inner component to handle navigation (must be inside Router context)
 function AppContent() {
@@ -77,6 +80,22 @@ function AppContent() {
             }
           />
           <Route
+            path="orders/:id"
+            element={
+              <ProtectedRoute>
+                <BookingDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="booking-success"
+            element={
+              <ProtectedRoute>
+                <BookingSuccessPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="feedback"
             element={
               <ProtectedRoute>
@@ -107,6 +126,7 @@ function App() {
       <BusTrackingProvider>
         <Router>
           <AppContent />
+          <DevWarning />
         </Router>
       </BusTrackingProvider>
     </NotificationProvider>

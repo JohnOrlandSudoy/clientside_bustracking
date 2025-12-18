@@ -1,5 +1,13 @@
 // API service for authentication
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbus-sumt.onrender.com/api'
+// Prefer using VITE_API_BASE_URL in your environment. If not set, default to localhost:3000
+// NOTE: Your backend in production or Render may be accessible at a custom host/port —
+// set VITE_API_BASE_URL accordingly (example: https://backendbus-sumt.onrender.com:3000/api)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+
+// Log the API URL being used (development only)
+if (import.meta.env.DEV) {
+  console.debug('🔌 API URL:', API_BASE_URL)
+}
 
 export interface SignUpData {
   email: string
@@ -51,6 +59,15 @@ export interface BusETA {
   }
 }
 
+export interface ContactResponse {
+  id: string
+  full_name: string
+  email: string
+  message: string
+  status: string
+  created_at: string
+}
+
 class AuthAPI {
   private getAuthHeaders(): Record<string, string> {
     const token = localStorage.getItem('auth_token')
@@ -62,33 +79,59 @@ class AuthAPI {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`
+    const isAuthEndpoint = endpoint.startsWith('/auth/')
     
     const defaultOptions: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
-        ...this.getAuthHeaders(),
+        ...(isAuthEndpoint ? {} : this.getAuthHeaders()),
         ...options.headers,
       },
     }
 
-    const response = await fetch(url, {
-      ...defaultOptions,
-      ...options,
+    console.debug(`🌐 API Request to: ${url}`, {
+      method: options.method || 'GET',
+      hasToken: !isAuthEndpoint && !!this.getAuthHeaders()['Authorization']
     })
 
-    const json = await response.json()
-
-    if (!response.ok) {
-      console.error(`API Error for ${endpoint}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        url: url,
-        response: json
+    try {
+      const response = await fetch(url, {
+        ...defaultOptions,
+        ...options,
       })
-      throw new Error(json.error_description || json.error || `HTTP error! status: ${response.status}`)
-    }
 
-    return json
+      // Handle non-JSON responses (like HTML errors)
+      const contentType = response.headers.get('content-type')
+      if (!contentType?.includes('application/json')) {
+        console.error('Non-JSON response received:', {
+          url,
+          status: response.status,
+          contentType
+        })
+        throw new Error(`Expected JSON response but got ${contentType}`)
+      }
+
+      const json = await response.json()
+
+      if (!response.ok) {
+        console.error(`API Error for ${endpoint}:`, {
+          status: response.status,
+          statusText: response.statusText,
+          url: url,
+          response: json
+        })
+        throw new Error(json.error_description || json.error || `HTTP error! status: ${response.status}`)
+      }
+
+      return json
+    } catch (error) {
+      console.error(`API Request failed for ${endpoint}:`, {
+        url,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        usingLocalhost: url.includes('localhost')
+      })
+      throw error
+    }
   }
 
   async signUp(data: SignUpData): Promise<AuthResponse> {
@@ -189,7 +232,7 @@ class AuthAPI {
 
   async logout(): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await this.makeRequest<any>('/auth/logout', {
+      await this.makeRequest<any>('/auth/logout', {
         method: 'POST',
       })
 
@@ -218,6 +261,7 @@ class AuthAPI {
 
       // Try to validate the token with the backend
       try {
+        console.debug('🔒 Validating token with backend...')
         const response = await this.makeRequest<any>('/auth/me', {
           method: 'GET',
         })
@@ -406,6 +450,27 @@ class AuthAPI {
     }
   }
 
+  // Terminals endpoint - some deployments may not provide this, so fallback
+  async getTerminals(): Promise<any> {
+    try {
+      return await this.makeRequest('/admin/terminals', { method: 'GET' });
+    } catch (error) {
+      console.warn('Terminals endpoint not available, using fallback terminals');
+      return [
+        {
+          id: '11111111-2222-3333-4444-555555555555',
+          name: 'Downtown Terminal',
+          location: { lat: 14.5980, lng: 120.9830 }
+        },
+        {
+          id: '66666666-7777-8888-9999-000000000000',
+          name: 'Suburb Terminal',
+          location: { lat: 14.6010, lng: 120.9860 }
+        }
+      ];
+    }
+  }
+
   async createBooking(bookingData: {
     userId: string
     busId: string
@@ -428,9 +493,22 @@ class AuthAPI {
     }
   }
 
-  async getUserBookings(): Promise<any> {
+  async createPaymentSession(sessionData: { userId: string; email: string; busId: string; seats: number[]; date?: string; totalAmount?: number }) {
     try {
-      return await this.makeRequest('/bookings/user', { method: 'GET' });
+      return await this.makeRequest('/client/create-payment-session', {
+        method: 'POST',
+        body: JSON.stringify(sessionData),
+      });
+    } catch (error) {
+      console.warn('Create payment session endpoint not available, error:', error);
+      throw error;
+    }
+  }
+
+  async getUserBookings(userId?: string): Promise<any> {
+    try {
+      const endpoint = userId ? `/client/bookings?userId=${encodeURIComponent(userId)}` : '/client/bookings'
+      return await this.makeRequest(endpoint, { method: 'GET' });
     } catch (error) {
       console.warn('User bookings endpoint not available, using mock data');
       // Return mock bookings data
@@ -451,6 +529,12 @@ class AuthAPI {
         }
       ];
     }
+  }
+
+  async getBookingById(bookingId: string, userId?: string): Promise<any | null> {
+    const list = await this.getUserBookings(userId)
+    if (!Array.isArray(list)) return null
+    return list.find((b: { id: string }) => b.id === bookingId) || null
   }
 
   async submitFeedback(feedbackData: {
@@ -526,6 +610,35 @@ class AuthAPI {
     }
   }
 
+  async sendReceiptForBooking(bookingId: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await this.makeRequest<{ success: boolean; message?: string }>(`/client/booking/${bookingId}/send-receipt`, {
+        method: 'POST',
+      });
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to send receipt'
+      };
+    }
+  }
+
+  async confirmPaymentAndSendReceipt(bookingId: string, sessionId: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await this.makeRequest<{ success: boolean; message?: string }>(`/client/booking/${bookingId}/confirm-payment`, {
+        method: 'POST',
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to confirm payment'
+      };
+    }
+  }
+
   // Notification methods
   async getNotifications(userId: string): Promise<any> {
     try {
@@ -579,6 +692,60 @@ class AuthAPI {
         message: 'All notifications marked as read'
       };
     }
+  }
+
+  async submitContact(contact: { fullName: string; email: string; message: string }): Promise<ContactResponse> {
+    const payload = {
+      fullName: contact.fullName,
+      email: contact.email,
+      message: contact.message
+    }
+    return await this.makeRequest<ContactResponse>('/client/contact', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  }
+
+  async submitRefund(data: {
+    full_name: string
+    email: string
+    reason: string
+    proof_url?: string | null
+    agree: boolean
+    booking_id?: string | null
+  }): Promise<any> {
+    const payload = {
+      full_name: data.full_name,
+      email: data.email,
+      reason: data.reason,
+      proof_url: data.proof_url || null,
+      agree: data.agree === true,
+      booking_id: data.booking_id || null
+    }
+    return await this.makeRequest('/client/refund', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  }
+
+  async uploadRefundProof(input: {
+    file_base64: string
+    filename: string
+    content_type?: string
+    user_id?: string
+    email?: string
+  }): Promise<{ publicUrl: string; path: string }> {
+    const payload = {
+      file_base64: input.file_base64,
+      filename: input.filename,
+      content_type: input.content_type || 'application/octet-stream',
+      user_id: input.user_id || undefined,
+      email: input.email || undefined
+    }
+    return await this.makeRequest('/client/refund/upload', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
   }
 }
 

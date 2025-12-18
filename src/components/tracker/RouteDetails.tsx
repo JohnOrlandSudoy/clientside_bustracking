@@ -20,11 +20,16 @@ const RouteDetails: React.FC<RouteDetailsProps> = ({
     // Only fetch if needed
     if ((!startTerminal || !endTerminal) && selectedBusETA?.route) {
       setLoading(true);
-      fetch('http://localhost:3000/api/admin/terminals')
-        .then(res => res.json())
-        .then(data => setTerminals(data))
-        .catch(() => setTerminals([]))
-        .finally(() => setLoading(false));
+      (async () => {
+        try {
+          const data = await (await import('../../lib/api')).authAPI.getTerminals();
+          setTerminals(data || []);
+        } catch (err) {
+          setTerminals([]);
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
   }, [startTerminal, endTerminal, selectedBusETA]);
 

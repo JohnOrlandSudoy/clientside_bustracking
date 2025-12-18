@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserCheck } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
+import { supabase } from '../lib/supabase'
 
 export default function AuthPage() {
-  const { user, signUp, signIn, loading, isInitialized, forceReset, shouldRedirect, clearRedirectFlag } = useAuthAPI()
+  const { user, signUp, signIn, loading, isInitialized, forceReset, shouldRedirect, clearRedirectFlag, googleSignIn } = useAuthAPI()
+  const [searchParams] = useSearchParams()
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [emailConfirmation, setEmailConfirmation] = useState(false)
@@ -17,6 +19,11 @@ export default function AuthPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [isResetMode, setIsResetMode] = useState(false)
+  const [resetEmailSent, setResetEmailSent] = useState('')
+  const [recoveryActive, setRecoveryActive] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [updatingPassword, setUpdatingPassword] = useState(false)
 
   // Reset form when user signs out (when user changes from authenticated to null)
   useEffect(() => {
@@ -36,6 +43,27 @@ export default function AuthPage() {
       clearRedirectFlag()
     }
   }, [shouldRedirect, clearRedirectFlag])
+
+  useEffect(() => {
+    const mode = searchParams.get('mode')
+    if (mode === 'signup') {
+      setIsLogin(false)
+    } else if (mode === 'signin') {
+      setIsLogin(true)
+    }
+  }, [searchParams])
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryActive(true)
+        setIsLogin(true)
+        setIsResetMode(false)
+        setError('')
+        setResetEmailSent('')
+      }
+    })
+    return () => { sub.subscription?.unsubscribe() }
+  }, [])
 
   // Debug logging to understand state
   useEffect(() => {
@@ -82,8 +110,26 @@ export default function AuthPage() {
     e.preventDefault()
     setIsSubmitting(true)
     setError('')
+    console.debug('Starting auth submission:', isLogin ? 'login' : 'signup')
 
     try {
+      if (isResetMode) {
+        try {
+          const redirectTo = `${window.location.origin}/auth`
+          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo })
+          if (resetErr) {
+            setError(resetErr.message)
+          } else {
+            setResetEmailSent('Password reset email sent')
+          }
+        } catch (err: any) {
+          setError(err?.message || 'Failed to send reset email')
+        } finally {
+          setIsSubmitting(false)
+        }
+        return
+      }
+
       let result
       if (isLogin) {
         result = await signIn(formData.email, formData.password)
@@ -141,6 +187,29 @@ export default function AuthPage() {
     }
   }
 
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newPassword || newPassword.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+    setUpdatingPassword(true)
+    setError('')
+    try {
+      const { data, error: updErr } = await supabase.auth.updateUser({ password: newPassword })
+      if (updErr) {
+        setError(updErr.message)
+      } else if (data) {
+        setRecoveryActive(false)
+        setNewPassword('')
+        setIsLogin(true)
+        setResetEmailSent('Password updated, please sign in')
+      }
+    } finally {
+      setUpdatingPassword(false)
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       email: '',
@@ -183,8 +252,26 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
+        <div className="bg-white rounded-2xl p-1 sm:p-1.5 lg:p-2 shadow-lg border border-pink-100 mb-3 sm:mb-4">
+          <div className="grid grid-cols-2 gap-1">
+            <button
+              type="button"
+              onClick={() => { setIsLogin(true); setEmailConfirmation(false); resetForm() }}
+              className={`py-2 rounded-xl text-sm sm:text-base font-semibold transition-all ${isLogin ? 'bg-pink-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIsLogin(false); setEmailConfirmation(false); resetForm() }}
+              className={`py-2 rounded-xl text-sm sm:text-base font-semibold transition-all ${!isLogin ? 'bg-pink-600 text-white shadow' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={recoveryActive ? handleUpdatePassword : handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
           <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
             {/* Email Field */}
             <div className="mb-3 sm:mb-4">
@@ -202,13 +289,13 @@ export default function AuthPage() {
                   className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
                   placeholder="Enter your email"
                   required
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || recoveryActive}
                 />
               </div>
             </div>
 
             {/* Username Field (Signup only) */}
-            {!isLogin && (
+            {!isLogin && !recoveryActive && (
               <div className="mb-3 sm:mb-4">
                 <label htmlFor="username" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Username
@@ -231,7 +318,7 @@ export default function AuthPage() {
             )}
 
             {/* Full Name Field (Signup only) */}
-            {!isLogin && (
+            {!isLogin && !recoveryActive && (
               <div className="mb-3 sm:mb-4">
                 <label htmlFor="fullName" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Full Name
@@ -254,7 +341,7 @@ export default function AuthPage() {
             )}
 
             {/* Phone Field (Signup only) */}
-            {!isLogin && (
+            {!isLogin && !recoveryActive && (
               <div className="mb-3 sm:mb-4">
                 <label htmlFor="phone" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
                   Phone Number
@@ -279,9 +366,10 @@ export default function AuthPage() {
             )}
 
             {/* Password Field */}
+            {!isResetMode && (
             <div className="mb-4 sm:mb-6">
               <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Password
+                {recoveryActive ? 'New Password' : 'Password'}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -289,10 +377,10 @@ export default function AuthPage() {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
+                  value={recoveryActive ? newPassword : formData.password}
+                  onChange={recoveryActive ? (e) => setNewPassword(e.target.value) : handleInputChange}
                   className="w-full pl-9 sm:pl-10 pr-10 sm:pr-12 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
-                  placeholder="Enter your password"
+                  placeholder={recoveryActive ? 'Enter new password' : 'Enter your password'}
                   required
                   minLength={6}
                   disabled={isSubmitting}
@@ -306,9 +394,9 @@ export default function AuthPage() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              
+
               {/* Password Requirements */}
-              {!isLogin && (
+              {!isLogin && !recoveryActive && (
                 <div className="mt-2 sm:mt-3 text-xs text-gray-500 space-y-1">
                   <div className="flex items-center">
                     <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full mr-1.5 sm:mr-2 ${formData.password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
@@ -329,6 +417,7 @@ export default function AuthPage() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -336,22 +425,50 @@ export default function AuthPage() {
                 <p className="text-red-600 text-xs sm:text-sm">{error}</p>
               </div>
             )}
+            {resetEmailSent && !recoveryActive && (
+              <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-xl">
+                <p className="text-green-700 text-xs sm:text-sm">{resetEmailSent}</p>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || updatingPassword}
               className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-target"
             >
               {isSubmitting ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
-                  {isLogin ? 'Signing In...' : 'Creating Client Account...'}
+                  {recoveryActive ? 'Updating Password...' : isLogin ? 'Signing In...' : 'Creating Client Account...'}
                 </div>
               ) : (
-                isLogin ? 'Sign In' : 'Create Client Account'
+                recoveryActive ? 'Update Password' : isResetMode ? 'Send Reset Email' : isLogin ? 'Sign In' : 'Create Client Account'
               )}
             </button>
+            {!recoveryActive && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  disabled={isSubmitting || updatingPassword}
+                  onClick={async () => {
+                    setError('')
+                    setIsSubmitting(true)
+                    const res = await googleSignIn()
+                    if (res?.error) {
+                      setError(res.error)
+                    }
+                    setIsSubmitting(false)
+                  }}
+                  className="w-full bg-white text-gray-800 py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base touch-target border border-gray-200"
+                >
+                  <span className="inline-flex items-center justify-center">
+                    <img src="/Google__G__logo.svg.png" alt="Google" className="w-5 h-5 mr-2" />
+                    Continue with Google
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Toggle Auth Mode */}
@@ -367,6 +484,17 @@ export default function AuthPage() {
                 {isLogin ? 'Sign Up' : 'Sign In'}
               </button>
             </p>
+            {!recoveryActive && (
+              <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsResetMode(true); setIsLogin(true); setEmailConfirmation(false); setError(''); setResetEmailSent('') }}
+                  className="text-pink-600 font-semibold hover:text-pink-700"
+                >
+                  Forgot password?
+                </button>
+              </p>
+            )}
           </div>
         </form>
 

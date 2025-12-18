@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Calendar, MapPin, Users, CreditCard, Check, AlertCircle, Clock } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { authAPI, BusETA } from '../lib/api'
@@ -25,16 +25,19 @@ interface Booking {
 
 export default function BookingPage() {
   const { user } = useAuthAPI()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [selectedBus, setSelectedBus] = useState(searchParams.get('busId') || '')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedSeats, setSelectedSeats] = useState<number[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash')
   const [error, setError] = useState('')
   const [buses, setBuses] = useState<Bus[]>([])
   const [loadingBuses, setLoadingBuses] = useState(true)
   const [bookingData, setBookingData] = useState<Booking | null>(null)
+  const [copySuccess, setCopySuccess] = useState('')
 
   // Load buses and ETAs from API
   useEffect(() => {
@@ -158,27 +161,50 @@ export default function BookingPage() {
     setError('')
 
     try {
-      const bookingPromises = selectedSeats.map(async (seatNumber) => {
-        const bookingData = {
-          userId: user.id,
-          busId: selectedBus
+      if (paymentMethod === 'cash') {
+        // Create bookings (one per seat) using existing endpoint
+        const bookingPromises = selectedSeats.map(async (seatNumber) => {
+          const bookingData = {
+            userId: user.id,
+            busId: selectedBus,
+            seat_number: seatNumber
+          }
+
+          console.log('Creating booking (cash):', bookingData)
+          return await authAPI.createBooking(bookingData)
+        })
+
+        const bookingResults = await Promise.all(bookingPromises)
+        const successfulBookings = bookingResults.filter(result => result && result.id)
+
+        if (successfulBookings.length === selectedSeats.length) {
+          setBookingSuccess(true)
+          setBookingData(successfulBookings[0])
+        } else {
+          setError(`Failed to book ${selectedSeats.length - successfulBookings.length} seats. Please try again.`)
         }
-
-        console.log('Creating booking:', bookingData)
-        return await authAPI.createBooking(bookingData)
-      })
-
-      const bookingResults = await Promise.all(bookingPromises)
-      
-      console.log('Booking results:', bookingResults)
-      
-      const successfulBookings = bookingResults.filter(result => result && result.id)
-      
-      if (successfulBookings.length === selectedSeats.length) {
-        setBookingSuccess(true)
-        setBookingData(successfulBookings[0])
       } else {
-        setError(`Failed to book ${selectedSeats.length - successfulBookings.length} seats. Please try again.`)
+        // Online payment: create a Stripe Checkout session on the backend
+        try {
+          const sessionResp: any = await authAPI.createPaymentSession({
+            userId: user.id,
+            email: user.email,
+            busId: selectedBus,
+            seats: selectedSeats,
+            date: selectedDate,
+            totalAmount: totalPrice
+          })
+
+          if (sessionResp && sessionResp.url) {
+            window.location.href = sessionResp.url
+            return
+          }
+
+          throw new Error('Failed to create payment session')
+        } catch (err) {
+          console.error('Failed to create payment session', err)
+          throw err
+        }
       }
     } catch (error) {
       console.error('Booking failed:', error)
@@ -195,6 +221,49 @@ export default function BookingPage() {
   const selectedBusData = buses.find(bus => bus.id === selectedBus)
   const totalPrice = selectedBusData ? 15 * selectedSeats.length : 0
 
+  const copyBookingId = async () => {
+    if (!bookingData?.id) return
+    try {
+      await navigator.clipboard.writeText(bookingData.id)
+      setCopySuccess('Copied!')
+      setTimeout(() => setCopySuccess(''), 2000)
+    } catch (e) {
+      setCopySuccess('Unable to copy')
+      setTimeout(() => setCopySuccess(''), 2000)
+    }
+  }
+
+  const downloadReceipt = () => {
+    if (!bookingData) return
+    const receipt = []
+    receipt.push('AuroRide - Booking Receipt')
+    receipt.push('--------------------------')
+    receipt.push(`Booking ID: ${bookingData.id}`)
+    receipt.push(`Route: ${selectedBusData?.route_name || 'N/A'}`)
+    receipt.push(`Date: ${selectedDate || 'N/A'}`)
+    receipt.push(`Seats: ${selectedSeats.join(', ')}`)
+    receipt.push(`Status: ${bookingData.status || 'N/A'}`)
+    receipt.push(`Total: $${totalPrice}`)
+    const blob = new Blob([receipt.join('\n')], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `AuroRide_receipt_${bookingData.id}.txt`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  useEffect(() => {
+    if (bookingSuccess) {
+      const t = setTimeout(() => {
+        navigate('/booking')
+      }, 4000)
+      return () => clearTimeout(t)
+    }
+  }, [bookingSuccess, navigate])
+
   if (bookingSuccess) {
     return (
       <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-lg mx-auto">
@@ -208,6 +277,27 @@ export default function BookingPage() {
           </p>
           <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-green-100 mb-4 sm:mb-6">
             <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-sm sm:text-base lg:text-lg">Booking Details</h3>
+            <div className="flex items-center justify-end space-x-2 mb-3">
+              <button
+                type="button"
+                onClick={copyBookingId}
+                className="px-3 py-1.5 text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 rounded-lg"
+                aria-label="Copy booking id"
+              >
+                Copy ID
+              </button>
+              <button
+                type="button"
+                onClick={downloadReceipt}
+                className="px-3 py-1.5 text-xs sm:text-sm bg-pink-50 text-pink-600 hover:bg-pink-100 rounded-lg"
+                aria-label="Download receipt"
+              >
+                Download Receipt
+              </button>
+              {copySuccess && (
+                <span className="text-xs text-green-600 ml-2">{copySuccess}</span>
+              )}
+            </div>
             <div className="space-y-2 text-left">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                 <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Booking ID:</span>
@@ -346,6 +436,35 @@ export default function BookingPage() {
               <Users className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
               Select Seats (Max 4)
             </h3>
+
+            {/* Payment Method Selection */}
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">Payment Method</h4>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash"
+                    checked={paymentMethod === 'cash'}
+                    onChange={() => setPaymentMethod('cash')}
+                    className="form-radio text-pink-500"
+                  />
+                  <span className="text-sm text-gray-700">Cash Payment</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="online"
+                    checked={paymentMethod === 'online'}
+                    onChange={() => setPaymentMethod('online')}
+                    className="form-radio text-pink-500"
+                  />
+                  <span className="text-sm text-gray-700">Online Payment (Credit/Debit Card)</span>
+                </label>
+              </div>
+            </div>
             
             <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
               {generateSeats(selectedBusData?.total_seats || 20, selectedBusData?.available_seats || 0).map((seat) => (
@@ -417,6 +536,34 @@ export default function BookingPage() {
             </div>
           </div>
         )}
+
+        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Payment Method</h3>
+          <div className="flex items-center space-x-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="payment"
+                value="cash"
+                checked={paymentMethod === 'cash'}
+                onChange={() => setPaymentMethod('cash')}
+                className="mr-2"
+              />
+              <span className="text-sm">Cash</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                name="payment"
+                value="online"
+                checked={paymentMethod === 'online'}
+                onChange={() => setPaymentMethod('online')}
+                className="mr-2"
+              />
+              <span className="text-sm">Pay Online (Card)</span>
+            </label>
+          </div>
+        </div>
 
         <button
           type="submit"
