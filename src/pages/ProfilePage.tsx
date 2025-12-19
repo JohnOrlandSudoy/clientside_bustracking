@@ -32,6 +32,7 @@ export default function ProfilePage() {
   const [submitting, setSubmitting] = useState(false)
   interface ContactResponse { id: string; full_name: string; email: string; message: string; status: string; created_at: string }
   const [submitResult, setSubmitResult] = useState<ContactResponse | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const handleSignOut = async () => {
     await signOut()
@@ -465,6 +466,11 @@ export default function ProfilePage() {
             >
               {submitting ? 'Submitting…' : 'Send'}
             </button>
+            {submitError && (
+              <div className="p-2.5 sm:p-3 bg-red-50 border border-red-200 rounded-lg text-xs sm:text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
             {submitResult && (
               <div className="p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-lg text-xs sm:text-sm text-green-700">
                 <div>Submitted</div>

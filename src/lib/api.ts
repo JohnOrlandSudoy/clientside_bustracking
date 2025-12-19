@@ -2,7 +2,7 @@
 // Prefer using VITE_API_BASE_URL in your environment. If not set, default to localhost:3000
 // NOTE: Your backend in production or Render may be accessible at a custom host/port —
 // set VITE_API_BASE_URL accordingly (example: https://backendbus-sumt.onrender.com:3000/api)
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backendbus-sumt.onrender.com/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 
 // Log the API URL being used (development only)
 if (import.meta.env.DEV) {

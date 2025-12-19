@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserCheck } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
-import { supabase } from '../lib/supabase'
+import { supabase, getAuthRedirectUrl } from '../lib/supabase'
 
 export default function AuthPage() {
   const { user, signUp, signIn, loading, isInitialized, forceReset, shouldRedirect, clearRedirectFlag, googleSignIn } = useAuthAPI()
@@ -10,6 +10,14 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [emailConfirmation, setEmailConfirmation] = useState(false)
+  type ResetDebug = {
+    redirectTo: string
+    supabaseUrlPresent: boolean
+    anonKeyPresent: boolean
+    errorStatus?: number
+    errorName?: string
+    errorMessage?: string
+  }
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,6 +32,7 @@ export default function AuthPage() {
   const [recoveryActive, setRecoveryActive] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [updatingPassword, setUpdatingPassword] = useState(false)
+  const [resetDebug, setResetDebug] = useState<ResetDebug | null>(null)
 
   // Reset form when user signs out (when user changes from authenticated to null)
   useEffect(() => {
@@ -115,15 +124,35 @@ export default function AuthPage() {
     try {
       if (isResetMode) {
         try {
-          const redirectTo = `${window.location.origin}/auth`
+          const redirectTo = getAuthRedirectUrl()
+          const baseDebug: ResetDebug = {
+            redirectTo,
+            supabaseUrlPresent: Boolean(import.meta.env.VITE_SUPABASE_URL),
+            anonKeyPresent: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY),
+          }
           const { error: resetErr } = await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo })
           if (resetErr) {
-            setError(resetErr.message)
+            const errObj = resetErr as unknown as { status?: number; name?: string; message?: string }
+            setError(errObj.message || 'Error sending recovery email')
+            setResetDebug({
+              ...baseDebug,
+              errorStatus: errObj.status,
+              errorName: errObj.name,
+              errorMessage: errObj.message,
+            })
           } else {
             setResetEmailSent('Password reset email sent')
+            setResetDebug(baseDebug)
           }
-        } catch (err: any) {
-          setError(err?.message || 'Failed to send reset email')
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'Failed to send reset email'
+          setError(msg)
+          setResetDebug({
+            redirectTo: getAuthRedirectUrl(),
+            supabaseUrlPresent: Boolean(import.meta.env.VITE_SUPABASE_URL),
+            anonKeyPresent: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY),
+            errorMessage: msg,
+          })
         } finally {
           setIsSubmitting(false)
         }
@@ -470,6 +499,26 @@ export default function AuthPage() {
               </div>
             )}
           </div>
+
+          {isResetMode && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4">
+              <p className="text-gray-800 text-xs sm:text-sm font-semibold mb-2">Reset Diagnostics</p>
+              <div className="text-xs sm:text-sm text-gray-700 space-y-1">
+                <div>Redirect URL: <span className="text-gray-900 font-mono">{resetDebug?.redirectTo || getAuthRedirectUrl()}</span></div>
+                <div>Supabase URL present: <span className="font-semibold">{Boolean(import.meta.env.VITE_SUPABASE_URL) ? 'Yes' : 'No'}</span></div>
+                <div>Anon key present: <span className="font-semibold">{Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY) ? 'Yes' : 'No'}</span></div>
+                {resetDebug?.errorStatus !== undefined && (
+                  <div>Error Status: <span className="font-semibold">{resetDebug.errorStatus}</span></div>
+                )}
+                {resetDebug?.errorName && (
+                  <div>Error Name: <span className="font-semibold">{resetDebug.errorName}</span></div>
+                )}
+                {resetDebug?.errorMessage && (
+                  <div>Error Message: <span className="font-semibold text-red-600">{resetDebug.errorMessage}</span></div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Toggle Auth Mode */}
           <div className="text-center">
