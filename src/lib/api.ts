@@ -74,6 +74,30 @@ class AuthAPI {
     return token ? { 'Authorization': `Bearer ${token}` } : {}
   }
 
+  async sendPasswordOtp(email: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.makeRequest<{ success: boolean; message: string }>('/auth/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
+    return response
+  }
+
+  async verifyPasswordOtp(email: string, code: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.makeRequest<{ success: boolean; message: string }>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    })
+    return response
+  }
+
+  async updatePasswordWithOtp(email: string, code: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.makeRequest<{ success: boolean; message: string }>('/auth/update-password-with-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, newPassword }),
+    })
+    return response
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {}

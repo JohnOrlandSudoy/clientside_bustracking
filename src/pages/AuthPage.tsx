@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Phone, UserCheck } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { supabase, getAuthRedirectUrl } from '../lib/supabase'
+import { authAPI } from '../lib/api'
 
 export default function AuthPage() {
   const { user, signUp, signIn, loading, isInitialized, forceReset, shouldRedirect, clearRedirectFlag, googleSignIn } = useAuthAPI()
@@ -32,7 +33,11 @@ export default function AuthPage() {
   const [recoveryActive, setRecoveryActive] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [updatingPassword, setUpdatingPassword] = useState(false)
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('')
   const [resetDebug, setResetDebug] = useState<ResetDebug | null>(null)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpVerified, setOtpVerified] = useState(false)
+  const [recoveryCode, setRecoveryCode] = useState('')
 
   // Reset form when user signs out (when user changes from authenticated to null)
   useEffect(() => {
@@ -98,8 +103,8 @@ export default function AuthPage() {
     )
   }
 
-  // Only redirect if user is authenticated and initialization is complete
-  if (user && isInitialized) {
+  // Only redirect if user is authenticated and not in recovery mode
+  if (user && isInitialized && !recoveryActive) {
     return <Navigate to="/" replace />
   }
 
@@ -124,25 +129,52 @@ export default function AuthPage() {
     try {
       if (isResetMode) {
         try {
-          const redirectTo = getAuthRedirectUrl()
-          const baseDebug: ResetDebug = {
-            redirectTo,
-            supabaseUrlPresent: Boolean(import.meta.env.VITE_SUPABASE_URL),
-            anonKeyPresent: Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY),
-          }
-          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo })
-          if (resetErr) {
-            const errObj = resetErr as unknown as { status?: number; name?: string; message?: string }
-            setError(errObj.message || 'Error sending recovery email')
-            setResetDebug({
-              ...baseDebug,
-              errorStatus: errObj.status,
-              errorName: errObj.name,
-              errorMessage: errObj.message,
-            })
+          if (!otpSent) {
+            if (!formData.email) {
+              setError('Enter your email')
+              setIsSubmitting(false)
+              return
+            }
+            try {
+              const res = await authAPI.sendPasswordOtp(formData.email)
+              if (res && res.success) {
+                setOtpSent(true)
+                setError('')
+                setResetEmailSent('OTP sent to your email')
+              } else {
+                setError(res?.message || 'Failed to send OTP')
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : 'Failed to send OTP'
+              setError(msg)
+            } finally {
+              setIsSubmitting(false)
+            }
+          } else if (!otpVerified) {
+            if (!recoveryCode || recoveryCode.length !== 6) {
+              setError('Enter the 6-digit code')
+              setIsSubmitting(false)
+              return
+            }
+            try {
+              const res = await authAPI.verifyPasswordOtp(formData.email, recoveryCode)
+              if (res && res.success) {
+                setRecoveryActive(true)
+                setIsResetMode(false)
+                setOtpVerified(true)
+                setError('')
+                setResetEmailSent('Code verified. Set your new password below.')
+              } else {
+                setError(res?.message || 'Invalid or expired code')
+              }
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : 'Failed to verify code'
+              setError(msg)
+            } finally {
+              setIsSubmitting(false)
+            }
           } else {
-            setResetEmailSent('Password reset email sent')
-            setResetDebug(baseDebug)
+            setIsSubmitting(false)
           }
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : 'Failed to send reset email'
@@ -209,7 +241,7 @@ export default function AuthPage() {
         // Show email confirmation for successful signup
         setEmailConfirmation(true)
       }
-    } catch (err) {
+  } catch {
       setError('An unexpected error occurred')
     } finally {
       setIsSubmitting(false)
@@ -222,17 +254,25 @@ export default function AuthPage() {
       setError('Password must be at least 6 characters long')
       return
     }
+    if (newPassword !== newPasswordConfirm) {
+      setError('Passwords do not match')
+      return
+    }
     setUpdatingPassword(true)
     setError('')
     try {
-      const { data, error: updErr } = await supabase.auth.updateUser({ password: newPassword })
-      if (updErr) {
-        setError(updErr.message)
-      } else if (data) {
+      const res = await authAPI.updatePasswordWithOtp(formData.email, recoveryCode, newPassword)
+      if (res && res.success) {
         setRecoveryActive(false)
         setNewPassword('')
+        setNewPasswordConfirm('')
         setIsLogin(true)
         setResetEmailSent('Password updated, please sign in')
+        setOtpSent(false)
+        setOtpVerified(false)
+        setRecoveryCode('')
+      } else {
+        setError(res?.message || 'Failed to update password')
       }
     } finally {
       setUpdatingPassword(false)
@@ -299,6 +339,14 @@ export default function AuthPage() {
             </button>
           </div>
         </div>
+
+        {recoveryActive && (
+          <div className="mb-3 sm:mb-4 p-2.5 sm:p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+            <p className="text-yellow-700 text-xs sm:text-sm">
+              Password recovery active — set and confirm your new password below.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={recoveryActive ? handleUpdatePassword : handleSubmit} className="space-y-3 sm:space-y-4 lg:space-y-6">
           <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
@@ -423,6 +471,25 @@ export default function AuthPage() {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {recoveryActive && (
+                <div className="mt-3">
+                  <label htmlFor="passwordConfirm" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="passwordConfirm"
+                    name="passwordConfirm"
+                    value={newPasswordConfirm}
+                    onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                    className="w-full pl-3 pr-3 py-2.5 sm:py-3 lg:py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base touch-target"
+                    placeholder="Re-enter new password"
+                    required
+                    minLength={6}
+                    disabled={isSubmitting}
+                  />
+                </div>
+              )}
 
               {/* Password Requirements */}
               {!isLogin && !recoveryActive && (
@@ -459,6 +526,30 @@ export default function AuthPage() {
                 <p className="text-green-700 text-xs sm:text-sm">{resetEmailSent}</p>
               </div>
             )}
+            {isResetMode && !recoveryActive && (
+              <div className="mb-3 sm:mb-4">
+                {!otpSent ? (
+                  <p className="text-xs sm:text-sm text-gray-600">Click the button to send a 6-digit code to your email.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <label htmlFor="recoveryCode" className="block text-xs sm:text-sm font-medium text-gray-700">Enter 6-digit code</label>
+                    <input
+                      id="recoveryCode"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      value={recoveryCode}
+                      onChange={(e) => setRecoveryCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm sm:text-base"
+                      placeholder="123456"
+                      disabled={isSubmitting}
+                    />
+                    <p className="text-xs text-gray-500">Check your email for the code and enter it here.</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
@@ -469,10 +560,10 @@ export default function AuthPage() {
               {isSubmitting ? (
                 <div className="flex items-center justify-center">
                   <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5 sm:mr-2"></div>
-                  {recoveryActive ? 'Updating Password...' : isLogin ? 'Signing In...' : 'Creating Client Account...'}
+                  {recoveryActive ? 'Updating Password...' : isResetMode ? (!otpSent ? 'Sending Code...' : !otpVerified ? 'Verifying Code...' : 'Ready') : isLogin ? 'Signing In...' : 'Creating Client Account...'}
                 </div>
               ) : (
-                recoveryActive ? 'Update Password' : isResetMode ? 'Send Reset Email' : isLogin ? 'Sign In' : 'Create Client Account'
+                recoveryActive ? 'Update Password' : isResetMode ? (!otpSent ? 'Send OTP' : !otpVerified ? 'Verify Code' : 'Update Password') : isLogin ? 'Sign In' : 'Create Client Account'
               )}
             </button>
             {!recoveryActive && (
@@ -505,8 +596,8 @@ export default function AuthPage() {
               <p className="text-gray-800 text-xs sm:text-sm font-semibold mb-2">Reset Diagnostics</p>
               <div className="text-xs sm:text-sm text-gray-700 space-y-1">
                 <div>Redirect URL: <span className="text-gray-900 font-mono">{resetDebug?.redirectTo || getAuthRedirectUrl()}</span></div>
-                <div>Supabase URL present: <span className="font-semibold">{Boolean(import.meta.env.VITE_SUPABASE_URL) ? 'Yes' : 'No'}</span></div>
-                <div>Anon key present: <span className="font-semibold">{Boolean(import.meta.env.VITE_SUPABASE_ANON_KEY) ? 'Yes' : 'No'}</span></div>
+                <div>Supabase URL present: <span className="font-semibold">{import.meta.env.VITE_SUPABASE_URL ? 'Yes' : 'No'}</span></div>
+                <div>Anon key present: <span className="font-semibold">{import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Yes' : 'No'}</span></div>
                 {resetDebug?.errorStatus !== undefined && (
                   <div>Error Status: <span className="font-semibold">{resetDebug.errorStatus}</span></div>
                 )}
@@ -537,7 +628,7 @@ export default function AuthPage() {
               <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-2">
                 <button
                   type="button"
-                  onClick={() => { setIsResetMode(true); setIsLogin(true); setEmailConfirmation(false); setError(''); setResetEmailSent('') }}
+                  onClick={() => { setIsResetMode(true); setIsLogin(true); setEmailConfirmation(false); setError(''); setResetEmailSent(''); setOtpSent(false); setOtpVerified(false); setRecoveryCode(''); setNewPassword(''); setNewPasswordConfirm('') }}
                   className="text-pink-600 font-semibold hover:text-pink-700"
                 >
                   Forgot password?

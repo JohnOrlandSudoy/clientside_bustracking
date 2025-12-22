@@ -20,6 +20,7 @@ import BookingDetailsPage from './pages/BookingDetailsPage'
 // Inner component to handle navigation (must be inside Router context)
 function AppContent() {
   const { user, loading, isInitialized, refreshSession, shouldRedirect, clearRedirectFlag } = useAuthAPI()
+  const isRecovery = typeof window !== 'undefined' && window.location.href.includes('type=recovery')
 
   // Handle redirect after sign out
   useEffect(() => {
@@ -53,7 +54,7 @@ function AppContent() {
         {/* Auth route - redirect to home if already logged in */}
         <Route
           path="/auth"
-          element={user ? <Navigate to="/" replace /> : <AuthPage />}
+          element={user && !isRecovery ? <Navigate to="/" replace /> : <AuthPage />}
         />
         
         {/* Main app routes */}
