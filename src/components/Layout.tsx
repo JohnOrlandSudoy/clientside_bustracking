@@ -159,6 +159,12 @@ export default function Layout() {
                   )}
                 </div>
               )}
+              {(open || ordersOpen) && (
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => { setOpen(false); setOrdersOpen(false); }}
+                />
+              )}
             </div>
           </div>
         </header>

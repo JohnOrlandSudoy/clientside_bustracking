@@ -251,6 +251,7 @@ export function useAuthAPI() {
 
   const signOut = async () => {
     try {
+      await supabase.auth.signOut();
       await authAPI.logout()
     } catch (error) {
       console.error('Logout error:', error)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Calendar, MapPin, Users, CreditCard, Check, AlertCircle, Clock } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
@@ -38,6 +38,7 @@ export default function BookingPage() {
   const [loadingBuses, setLoadingBuses] = useState(true)
   const [bookingData, setBookingData] = useState<Booking | null>(null)
   const [copySuccess, setCopySuccess] = useState('')
+  const [occupiedSeatSet, setOccupiedSeatSet] = useState<Set<number>>(new Set())
 
   // Load buses and ETAs from API
   useEffect(() => {
@@ -127,19 +128,20 @@ export default function BookingPage() {
     loadBusesAndETAs()
   }, [searchParams])
 
-  const generateSeats = (totalSeats: number, availableSeats: number) => {
-    const seats = []
-    const occupiedSeats = totalSeats - availableSeats
-    const occupiedSeatNumbers = Array.from({ length: occupiedSeats }, () => Math.floor(Math.random() * totalSeats) + 1)
-    
-    for (let i = 1; i <= totalSeats; i++) {
-      seats.push({
-        number: i,
-        isOccupied: occupiedSeatNumbers.includes(i),
-        isSelected: selectedSeats.includes(i),
-      })
+  const hashString = (str: string) => {
+    let h = 0
+    for (let i = 0; i < str.length; i++) {
+      h = (h * 31 + str.charCodeAt(i)) >>> 0
     }
-    return seats
+    return h
+  }
+
+  const lcg = (seed: number) => {
+    let s = seed >>> 0
+    return () => {
+      s = (s * 1664525 + 1013904223) >>> 0
+      return s
+    }
   }
 
   const handleSeatSelect = (seatNumber: number) => {
@@ -220,6 +222,41 @@ export default function BookingPage() {
 
   const selectedBusData = buses.find(bus => bus.id === selectedBus)
   const totalPrice = selectedBusData ? 15 * selectedSeats.length : 0
+
+  useEffect(() => {
+    const total = selectedBusData?.total_seats || 0
+    const available = selectedBusData?.available_seats || 0
+    const count = total > available ? total - available : 0
+    if (!total || count <= 0) {
+      setOccupiedSeatSet(new Set())
+      return
+    }
+    const seedStr = `${selectedBus}|${selectedDate}`
+    const seed = hashString(seedStr)
+    const rnd = lcg(seed)
+    const order: number[] = Array.from({ length: total }, (_, i) => i + 1)
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = rnd() % (i + 1)
+      const tmp = order[i]
+      order[i] = order[j]
+      order[j] = tmp
+    }
+    setOccupiedSeatSet(new Set(order.slice(0, count)))
+  }, [selectedBus, selectedDate, selectedBusData?.total_seats, selectedBusData?.available_seats])
+
+  const seats = useMemo(() => {
+    const total = selectedBusData?.total_seats || 20
+    const selectedSet = new Set(selectedSeats)
+    const list = []
+    for (let i = 1; i <= total; i++) {
+      list.push({
+        number: i,
+        isOccupied: occupiedSeatSet.has(i),
+        isSelected: selectedSet.has(i),
+      })
+    }
+    return list
+  }, [selectedBusData?.total_seats, occupiedSeatSet, selectedSeats])
 
   const copyBookingId = async () => {
     if (!bookingData?.id) return
@@ -415,20 +452,7 @@ export default function BookingPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
-          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
-            <Calendar className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
-            Select Date
-          </h3>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-            className="w-full p-2.5 sm:p-3 lg:p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-xs sm:text-sm lg:text-base touch-target"
-            required
-          />
-        </div>
+        
 
         {selectedBus && (
           <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
@@ -467,7 +491,7 @@ export default function BookingPage() {
             </div>
             
             <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
-              {generateSeats(selectedBusData?.total_seats || 20, selectedBusData?.available_seats || 0).map((seat) => (
+              {seats.map((seat) => (
                 <button
                   key={seat.number}
                   type="button"
@@ -563,6 +587,21 @@ export default function BookingPage() {
               <span className="text-sm">Pay Online (Card)</span>
             </label>
           </div>
+        </div>
+        
+        <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100">
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+            <Calendar className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
+            Select Date
+          </h3>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            className="w-full p-2.5 sm:p-3 lg:p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 text-xs sm:text-sm lg:text-base touch-target"
+            required
+          />
         </div>
 
         <button
