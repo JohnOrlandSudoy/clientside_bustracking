@@ -39,6 +39,7 @@ export default function BookingPage() {
   const [bookingData, setBookingData] = useState<Booking | null>(null)
   const [copySuccess, setCopySuccess] = useState('')
   const [occupiedSeatSet, setOccupiedSeatSet] = useState<Set<number>>(new Set())
+  const USD_TO_PHP = 58.74
 
   // Load buses and ETAs from API
   useEffect(() => {
@@ -280,7 +281,7 @@ export default function BookingPage() {
     receipt.push(`Date: ${selectedDate || 'N/A'}`)
     receipt.push(`Seats: ${selectedSeats.join(', ')}`)
     receipt.push(`Status: ${bookingData.status || 'N/A'}`)
-    receipt.push(`Total: $${totalPrice}`)
+    receipt.push(`Total: $${totalPrice} (≈ ₱${(totalPrice * USD_TO_PHP).toFixed(2)} PHP)`)
     const blob = new Blob([receipt.join('\n')], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -358,7 +359,10 @@ export default function BookingPage() {
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t pt-2">
                 <span className="text-gray-600 text-xs sm:text-sm lg:text-base">Total:</span>
-                <span className="font-bold text-pink-600 text-sm sm:text-base lg:text-lg">${totalPrice}</span>
+                <span className="font-bold text-pink-600 text-sm sm:text-base lg:text-lg">
+                  ${totalPrice}
+                  <span className="ml-2 text-gray-700 font-medium">≈ ₱{(totalPrice * USD_TO_PHP).toFixed(2)}</span>
+                </span>
               </div>
             </div>
           </div>
@@ -442,7 +446,10 @@ export default function BookingPage() {
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <div className="text-base sm:text-lg lg:text-xl font-bold text-pink-600">$15</div>
+                      <div className="text-base sm:text-lg lg:text-xl font-bold text-pink-600">
+                        $15
+                        <span className="ml-2 text-xs sm:text-sm text-gray-600">≈ ₱{(15 * USD_TO_PHP).toFixed(2)}</span>
+                      </div>
                       <div className="text-xs sm:text-sm text-gray-600">per seat</div>
                     </div>
                   </div>
@@ -554,7 +561,10 @@ export default function BookingPage() {
               <div className="border-t border-pink-300 pt-2">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm sm:text-base lg:text-lg">
                   <span>Total:</span>
-                  <span className="font-bold">${totalPrice}</span>
+                  <span className="font-bold">
+                    ${totalPrice}
+                    <span className="ml-2 font-semibold">≈ ₱{(totalPrice * USD_TO_PHP).toFixed(2)}</span>
+                  </span>
                 </div>
               </div>
             </div>
@@ -615,7 +625,7 @@ export default function BookingPage() {
               Processing Booking...
             </div>
           ) : (
-            `Book ${selectedSeats.length} Seat${selectedSeats.length !== 1 ? 's' : ''} - $${totalPrice}`
+            `Book ${selectedSeats.length} Seat${selectedSeats.length !== 1 ? 's' : ''} - $${totalPrice} • ≈ ₱${(totalPrice * USD_TO_PHP).toFixed(2)}`
           )}
         </button>
       </form>
