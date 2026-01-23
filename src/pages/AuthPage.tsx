@@ -238,8 +238,10 @@ export default function AuthPage() {
       if (result.error) {
         setError(result.error)
       } else if (!isLogin && result.data) {
-        // Show email confirmation for successful signup
-        setEmailConfirmation(true)
+        // Show email confirmation only if no token was returned (meaning confirmation is required)
+        if (!result.data.token) {
+          setEmailConfirmation(true)
+        }
       }
   } catch {
       setError('An unexpected error occurred')

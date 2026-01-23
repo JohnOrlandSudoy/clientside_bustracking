@@ -203,9 +203,12 @@ export function useAuthAPI() {
     try {
       const response = await authAPI.signUp(signUpData)
       if (response.success && response.data) {
-        setUser(response.data.user)
-        setToken(response.data.token)
-        localStorage.setItem('auth_token', response.data.token)
+        // Only log in if we have a valid token
+        if (response.data.token) {
+          setUser(response.data.user)
+          setToken(response.data.token)
+          localStorage.setItem('auth_token', response.data.token)
+        }
         return { data: response.data, error: null }
       } else {
         return { data: null, error: response.error || 'Sign up failed' }

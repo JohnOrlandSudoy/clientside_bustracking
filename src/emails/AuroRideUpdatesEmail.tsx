@@ -22,7 +22,7 @@ export default function AuroRideUpdatesEmail({ username = 'Customer' }: Props) {
               Thanks for subscribing to AuroRide updates. We will send you route changes, delays, announcements, and special notices.
             </Text>
             <Section className="text-center mt-6 mb-6">
-              <Button className="py-2.5 px-5 bg-pink-600 rounded-md text-white text-sm font-semibold no-underline" href="https://auroride.example.com/updates">
+              <Button className="py-2.5 px-5 bg-pink-600 rounded-md text-white text-sm font-semibold no-underline" href="https://auroride.xyz">
                 View Latest Updates
               </Button>
             </Section>
