@@ -51,6 +51,15 @@ export default function BookingPage() {
   const USD_TO_PHP = 58.74
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
+  const formatRouteName = (name?: string | null) => {
+    if (!name) return 'Unknown Route'
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
   console.log('BookingPage user debug:', {
     id: user?.id,
     email: user?.email,
@@ -665,7 +674,7 @@ export default function BookingPage() {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-3">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-gray-800 text-xs sm:text-sm lg:text-base truncate">
-                        {bus.route_name || 'Unknown Route'}
+                        {formatRouteName(bus.route_name)}
                       </h4>
                       <div className="space-y-1 mt-1">
                         <p className="text-xs sm:text-sm text-gray-600 flex items-center">
@@ -878,7 +887,9 @@ export default function BookingPage() {
             <div className="space-y-2">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                 <span className="text-xs sm:text-sm">Route:</span>
-                <span className="font-semibold text-xs sm:text-sm lg:text-base text-right">{selectedBusData?.route_name || 'Unknown Route'}</span>
+                <span className="font-semibold text-xs sm:text-sm lg:text-base text-right">
+                  {formatRouteName(selectedBusData?.route_name)}
+                </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                 <span className="text-xs sm:text-sm">ETA:</span>
