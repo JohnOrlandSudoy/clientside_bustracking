@@ -171,7 +171,7 @@ export default function Layout() {
       )}
       
       {/* Main Content with proper mobile spacing */}
-      <main className="px-3 sm:px-4 lg:px-6 max-w-lg mx-auto pt-16 sm:pt-20">
+      <main className="px-3 sm:px-4 lg:px-6 max-w-lg mx-auto pt-16 sm:pt-20 scroll-smooth-mobile">
         <Outlet />
       </main>
       

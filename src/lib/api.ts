@@ -771,6 +771,80 @@ class AuthAPI {
       body: JSON.stringify(payload)
     })
   }
+
+  async uploadDiscountID(input: {
+    file_base64: string
+    filename: string
+    content_type?: string
+    user_id?: string
+    email?: string
+  }): Promise<{ publicUrl: string; path: string }> {
+    const payload = {
+      file_base64: input.file_base64,
+      filename: input.filename,
+      content_type: input.content_type || 'application/octet-stream',
+      user_id: input.user_id || undefined,
+      email: input.email || undefined
+    }
+    return await this.makeRequest('/client/discount/upload', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  }
+
+  // Discount Verification API methods
+  async submitDiscountVerification(data: { 
+    userId: string; 
+    type: 'student' | 'senior_citizen' | 'pwd'; 
+    idImageUrl: string;
+    email?: string;
+    username?: string;
+    fullName?: string;
+  }): Promise<any> {
+    try {
+      return await this.makeRequest('/client/discount-verification', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.error('Failed to submit discount verification:', error);
+      throw error;
+    }
+  }
+
+  async getDiscountVerificationStatus(userId: string): Promise<any> {
+    try {
+      return await this.makeRequest(`/client/discount-verification/${userId}`, {
+        method: 'GET',
+      });
+    } catch (error) {
+      console.error('Failed to get discount verification status:', error);
+      throw error;
+    }
+  }
+
+  async getPendingDiscountVerifications(): Promise<any> {
+    try {
+      return await this.makeRequest('/admin/discount-verifications/pending', {
+        method: 'GET',
+      });
+    } catch (error) {
+      console.error('Failed to get pending discount verifications:', error);
+      throw error;
+    }
+  }
+
+  async updateDiscountVerificationStatus(id: string, data: { status: 'approved' | 'rejected', rejectionReason?: string, adminId: string }): Promise<any> {
+    try {
+      return await this.makeRequest(`/admin/discount-verification/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.error('Failed to update discount verification status:', error);
+      throw error;
+    }
+  }
 }
 
 export const authAPI = new AuthAPI()

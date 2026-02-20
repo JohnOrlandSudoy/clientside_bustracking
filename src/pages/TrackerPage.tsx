@@ -537,6 +537,8 @@ export default function TrackerPage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          overflowY: 'auto',
+          padding: '20px'
         }}>
           <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
             <MapPin size={40} className="text-white" />

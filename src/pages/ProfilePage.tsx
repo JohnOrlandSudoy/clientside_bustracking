@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Mail, Calendar, MapPin, Star, LogOut, Bell, Phone, MessageSquare, FileText, CheckSquare, AlertCircle } from 'lucide-react'
+import { User as UserIcon, Mail, Calendar, MapPin, Star, LogOut, Bell, Phone, MessageSquare, FileText, CheckSquare, AlertCircle } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { authAPI } from '../lib/api'
- 
+import { supabase } from '../lib/supabase'
+
 interface Booking {
   id: string
   route: string
@@ -23,20 +24,40 @@ interface RawBooking {
   amount?: number | string
 }
 
+interface ContactResponse { 
+  id: string; 
+  full_name: string; 
+  email: string; 
+  message: string; 
+  status: string; 
+  created_at: string 
+}
+
 export default function ProfilePage() {
-  const { user, signOut } = useAuthAPI()
+  const auth = useAuthAPI()
+  const { user, signOut } = auth
   const navigate = useNavigate()
-  const [fullName, setFullName] = useState(user?.profile?.fullName || '')
-  const [email, setEmail] = useState(user?.email || '')
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  
+  // Update local state when user data becomes available
+  useEffect(() => {
+    if (user) {
+      setFullName(user.profile?.fullName || '')
+      setEmail(user.email || '')
+    }
+  }, [user])
+
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  interface ContactResponse { id: string; full_name: string; email: string; message: string; status: string; created_at: string }
   const [submitResult, setSubmitResult] = useState<ContactResponse | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const handleSignOut = async () => {
-    await signOut()
-    navigate('/auth')
+    if (signOut) {
+      await signOut()
+      navigate('/auth')
+    }
   }
 
   // Dynamic user stats based on actual user data
@@ -65,13 +86,15 @@ export default function ProfilePage() {
     const load = async () => {
       try {
         const bookings = await authAPI.getUserBookings(user?.id)
-        const mapped: Booking[] = (Array.isArray(bookings) ? bookings : []).map((b: RawBooking) => ({
-          id: b.id,
-          route: b?.bus?.route?.name || 'Unknown Route',
-          date: b.travel_date ? new Date(b.travel_date).toLocaleDateString() : new Date(b.created_at).toLocaleDateString(),
-          seats: Array.isArray(b.seats) ? b.seats : [],
-          status: (b.status || 'upcoming') as 'completed' | 'upcoming' | 'cancelled',
-          price: typeof b.amount === 'number' ? b.amount : Number(b.amount || 0)
+        const mapped: Booking[] = (Array.isArray(bookings) ? bookings : [])
+          .filter((b: any) => b && typeof b === 'object') // Filter out null/undefined entries
+          .map((b: RawBooking) => ({
+            id: b.id || `temp-${Math.random()}`, // Fallback ID if missing
+            route: b?.bus?.route?.name || 'Unknown Route',
+            date: b.travel_date ? new Date(b.travel_date).toLocaleDateString() : (b.created_at ? new Date(b.created_at).toLocaleDateString() : 'Unknown Date'),
+            seats: Array.isArray(b.seats) ? b.seats : [],
+            status: (b.status || 'upcoming') as 'completed' | 'upcoming' | 'cancelled',
+            price: typeof b.amount === 'number' ? b.amount : Number(b.amount || 0)
         }))
         if (active) setRecentBookings(mapped)
       } catch {
@@ -82,12 +105,77 @@ export default function ProfilePage() {
     return () => { active = false }
   }, [user?.id])
 
+  useEffect(() => {
+    if (!user?.id) return
+
+    let active = true
+
+    const loadDiscountStatus = async () => {
+      try {
+        setLoadingDiscount(true)
+        const status = await authAPI.getDiscountVerificationStatus(user.id)
+        if (active) {
+          setDiscountVerification(status)
+        }
+      } catch (err) {
+        console.error('Failed to load discount status:', err)
+      } finally {
+        if (active) {
+          setLoadingDiscount(false)
+        }
+      }
+    }
+
+    loadDiscountStatus()
+
+    return () => {
+      active = false
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel(`profile_discount_verifications_user_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'discount_verifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        async () => {
+          try {
+            const status = await authAPI.getDiscountVerificationStatus(user.id)
+            setDiscountVerification(status)
+          } catch (err) {
+            console.error('Failed to refresh discount status after realtime update (profile):', err)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id])
+
   const [refundReason, setRefundReason] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [proofUrl, setProofUrl] = useState<string | null>(null)
   const [refundSubmitting, setRefundSubmitting] = useState(false)
   const [refundError, setRefundError] = useState<string | null>(null)
   const [refundSuccess, setRefundSuccess] = useState<string | null>(null)
+
+  const [discountVerification, setDiscountVerification] = useState<any>(null)
+  const [loadingDiscount, setLoadingDiscount] = useState(false)
+  const [discountType, setDiscountType] = useState<'student' | 'senior_citizen'>('student')
+  const [discountFile, setDiscountFile] = useState<File | null>(null)
+  const [discountSubmitting, setDiscountSubmitting] = useState(false)
+  const [discountError, setDiscountError] = useState<string | null>(null)
+  const [discountSuccess, setDiscountSuccess] = useState<string | null>(null)
 
   const handleFileUpload = async (file: File) => {
     setRefundError(null)
@@ -149,44 +237,101 @@ export default function ProfilePage() {
     }
   }
 
+  const submitDiscount = async () => {
+    if (!user?.id || !discountFile) return
+    setDiscountError(null)
+    setDiscountSuccess(null)
+    setDiscountSubmitting(true)
+    
+    try {
+      // 1. Validation: Check file size (max 5MB)
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      if (discountFile.size > MAX_SIZE) {
+        throw new Error('File is too large. Please upload an image smaller than 5MB.')
+      }
+
+      // 2. Validation: Check file type
+      if (!discountFile.type.startsWith('image/')) {
+        throw new Error('Invalid file type. Please upload an image (JPG, PNG).')
+      }
+
+      // 3. Read file as Base64
+      const readFileAsBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error('Failed to read file. Please try again.'))
+          reader.readAsDataURL(file)
+        })
+      }
+
+      const base64 = await readFileAsBase64(discountFile)
+      const base64Content = base64.split(',')[1]
+
+      // 4. Upload to Supabase Storage via Backend
+      const { publicUrl } = await authAPI.uploadDiscountID({
+        file_base64: base64Content,
+        filename: discountFile.name,
+        content_type: discountFile.type,
+        user_id: user.id,
+        email: user.email
+      })
+
+      if (!publicUrl) {
+        throw new Error('Upload successful but no URL returned from server.')
+      }
+
+      // 5. Submit Verification Request to Database
+      await authAPI.submitDiscountVerification({
+        userId: user.id,
+        type: discountType as 'student' | 'senior_citizen',
+        idImageUrl: publicUrl
+      })
+
+      setDiscountSuccess('ID submitted successfully for verification!')
+      setDiscountFile(null)
+      
+      // 6. Refresh Status
+      const status = await authAPI.getDiscountVerificationStatus(user.id)
+      setDiscountVerification(status)
+    } catch (err: any) {
+      console.error('Discount submission failed:', err)
+      const msg = err.message || 'Failed to submit discount verification. Please try again.'
+      setDiscountError(msg)
+    } finally {
+      setDiscountSubmitting(false)
+    }
+  }
+
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+      </div>
+    )
+  }
+
   return (
-    <div className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-lg mx-auto">
-      {/* Header */}
-      <div className="text-center mb-4 sm:mb-6 lg:mb-8">
-        <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-gradient-to-r from-pink-500 to-pink-400 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg">
-          <User className="text-white" size={28} />
-        </div>
-        <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">
-          {user?.profile?.fullName || user?.username || user?.email?.split('@')[0] || 'User'}
-        </h1>
-        <p className="text-xs sm:text-sm lg:text-base text-gray-600 flex items-center justify-center mt-1">
-          <Mail size={14} className="mr-1" />
-          {user?.email}
-        </p>
-        {user?.profile?.phone && (
-          <p className="text-xs sm:text-sm lg:text-base text-gray-600 flex items-center justify-center mt-1">
-            <Phone size={14} className="mr-1" />
-            {user.profile.phone}
-          </p>
-        )}
-        {user?.role && (
-          <p className="text-pink-600 text-xs sm:text-sm font-medium mt-1 capitalize">
-            {user.role}
-          </p>
-        )}
-        {user?.role === 'driver' && (
-          <div className="mt-2 sm:mt-3 p-2.5 sm:p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-700 text-xs sm:text-sm text-center">
-              🚌 You have driver privileges. You can access bus tracking and management features.
-            </p>
+    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-24 lg:pb-12 pt-16 sm:pt-20 lg:pt-24 px-3 sm:px-4 lg:px-8 font-sans">
+      {/* Header Section */}
+      <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-lg border border-pink-100 mb-3 sm:mb-4 lg:mb-6 text-center relative overflow-hidden">
+        <div className="relative z-10">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-inner">
+            <UserIcon className="text-pink-500 w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14" />
           </div>
-        )}
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-1">
+            {user?.profile?.fullName || user?.username}
+          </h2>
+          <p className="text-pink-600 text-xs sm:text-sm font-medium mt-1 capitalize">
+            {user?.role}
+          </p>
+        </div>
       </div>
 
       {/* User Information Card */}
       <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100 mb-3 sm:mb-4 lg:mb-6">
         <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
-          <User className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
+          <UserIcon className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
           Account Information
         </h3>
         <div className="space-y-2 sm:space-y-3">
@@ -295,6 +440,108 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Discount Verification Card */}
+      <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100 mb-3 sm:mb-4 lg:mb-6">
+        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
+          <Star className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
+          Discount Verification
+        </h3>
+        
+        {loadingDiscount ? (
+          <div className="flex items-center justify-center py-4">
+            <div className="w-6 h-6 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin"></div>
+          </div>
+        ) : !discountVerification ? (
+          <div className="space-y-3 sm:space-y-4">
+            <p className="text-xs sm:text-sm text-gray-600">
+              Are you a student or a senior citizen? Submit your ID to get a 20% discount on all your bookings.
+            </p>
+            <div className="space-y-3">
+              <div className="flex flex-col">
+                <label className="text-gray-600 text-xs sm:text-sm mb-1">ID Type</label>
+                <select 
+                  value={discountType}
+                  onChange={(e) => setDiscountType(e.target.value as any)}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                >
+                  <option value="student">Student ID</option>
+                  <option value="senior_citizen">Senior Citizen ID</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="text-gray-600 text-xs sm:text-sm mb-1">ID Photo</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setDiscountFile(e.target.files?.[0] || null)}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+                />
+              </div>
+              {discountError && (
+                <div className="text-xs text-red-600 flex items-center">
+                  <AlertCircle className="mr-1" size={14} />
+                  {discountError}
+                </div>
+              )}
+              {discountSuccess && (
+                <div className="text-xs text-green-600 flex items-center">
+                  <CheckSquare className="mr-1" size={14} />
+                  {discountSuccess}
+                </div>
+              )}
+              <button
+                onClick={submitDiscount}
+                disabled={discountSubmitting || !discountFile}
+                className="w-full bg-gradient-to-r from-pink-500 to-pink-400 text-white py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-95 transition-all duration-200 text-xs sm:text-sm lg:text-base disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {discountSubmitting ? 'Submitting…' : 'Submit ID for Discount'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 sm:p-4 rounded-xl border-2 border-pink-50 bg-pink-50">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs sm:text-sm font-semibold text-gray-800 capitalize">
+                {(discountVerification?.type || 'Discount').replace('_', ' ')} Discount
+              </span>
+              <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold uppercase ${
+                discountVerification.status === 'approved' ? 'bg-green-100 text-green-700' :
+                discountVerification.status === 'pending' ? 'bg-blue-100 text-blue-700' :
+                'bg-red-100 text-red-700'
+              }`}>
+                {discountVerification.status}
+              </span>
+            </div>
+            <p className="text-[10px] sm:text-xs text-gray-600 mb-2">
+              Submitted on: {discountVerification.submitted_at ? new Date(discountVerification.submitted_at).toLocaleDateString() : 'Unknown Date'}
+            </p>
+            {discountVerification.status === 'approved' && (
+              <p className="text-xs text-green-700 font-medium">
+                ✅ Your 20% discount is active and will be applied automatically to your bookings.
+              </p>
+            )}
+            {discountVerification.status === 'pending' && (
+              <p className="text-xs text-blue-700">
+                ⏳ Our team is reviewing your ID. This usually takes 24-48 hours.
+              </p>
+            )}
+            {discountVerification.status === 'rejected' && (
+              <div className="space-y-2">
+                <p className="text-xs text-red-700">
+                  ❌ Verification failed. {discountVerification.rejection_reason && `Reason: ${discountVerification.rejection_reason}`}
+                </p>
+                <button
+                  onClick={() => setDiscountVerification(null)}
+                  className="text-xs text-pink-600 font-bold hover:underline"
+                >
+                  Try Again with a Different ID
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100 mb-3 sm:mb-4 lg:mb-6">

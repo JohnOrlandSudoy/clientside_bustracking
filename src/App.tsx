@@ -49,7 +49,7 @@ function AppContent() {
   }
 
   return (
-    <div className="font-['Poppins'] bg-gradient-to-br from-pink-50 to-white min-h-screen">
+    <div className="font-['Poppins'] min-h-screen flex flex-col">
       <Routes>
         {/* Auth route - redirect to home if already logged in */}
         <Route

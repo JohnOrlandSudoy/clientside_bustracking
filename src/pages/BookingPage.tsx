@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Calendar, MapPin, Users, CreditCard, Check, AlertCircle, Clock } from 'lucide-react'
+import { Calendar, MapPin, Users, CreditCard, Check, AlertCircle, Clock, Star } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { authAPI, BusETA } from '../lib/api'
+import { supabase } from '../lib/supabase'
 
 interface Bus {
   id: string
@@ -39,88 +40,245 @@ export default function BookingPage() {
   const [bookingData, setBookingData] = useState<Booking | null>(null)
   const [copySuccess, setCopySuccess] = useState('')
   const [occupiedSeatSet, setOccupiedSeatSet] = useState<Set<number>>(new Set())
+  const [discountVerification, setDiscountVerification] = useState<any>(null)
+  const [loadingDiscount, setLoadingDiscount] = useState(false)
+  const [isDiscountSubmitting, setIsDiscountSubmitting] = useState(false)
+  const [discountType, setDiscountType] = useState<'student' | 'senior_citizen' | 'pwd' | ''>('')
+  const [discountFile, setDiscountFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [discountSuccess, setDiscountSuccess] = useState(false)
+  const [isRegularClient, setIsRegularClient] = useState(false)
   const USD_TO_PHP = 58.74
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  console.log('BookingPage user debug:', {
+    id: user?.id,
+    email: user?.email,
+    username: user?.username
+  })
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    setDiscountFile(file)
+    
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    } else {
+      setImagePreview(null)
+    }
+  }
+
+  const [discountError, setDiscountError] = useState<string | null>(null)
+
+  const handleDiscountSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault()
+    
+    console.log('Starting discount submission process...')
+    setIsDiscountSubmitting(true)
+    setDiscountError(null)
+    
+    try {
+      console.log('Discount submit for user:', user?.id, user?.email)
+      if (!user?.id) {
+        throw new Error('You must be logged in to submit verification.')
+      }
+      
+      if (!discountType) {
+        throw new Error('Please select a discount type.')
+      }
+      
+      if (!discountFile) {
+        throw new Error('Please select an ID image to upload.')
+      }
+    
+      console.log('Validating file...', discountFile.name, discountFile.size, discountFile.type)
+
+      
+      // 1. Validation: Check file size (max 5MB)
+      const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+      if (discountFile.size > MAX_SIZE) {
+        throw new Error('File is too large. Please upload an image smaller than 5MB.')
+      }
+
+      // 2. Validation: Check file type
+      if (!discountFile.type.startsWith('image/')) {
+        throw new Error('Invalid file type. Please upload an image (JPG, PNG).')
+      }
+
+      // 3. Read file
+      const readFileAsBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error('Failed to read file. Please try again.'))
+          reader.readAsDataURL(file)
+        })
+      }
+
+      console.log('Reading file...')
+      const base64 = await readFileAsBase64(discountFile)
+      // Check if base64 string is valid
+      if (!base64 || !base64.includes(',')) {
+          throw new Error('Failed to process image file.')
+      }
+      const base64Content = base64.split(',')[1]
+
+      console.log('Uploading to server...')
+
+      // 4. Upload to Supabase Storage via Backend
+      const uploadResponse = await authAPI.uploadDiscountID({
+        file_base64: base64Content,
+        filename: discountFile.name,
+        content_type: discountFile.type,
+        user_id: user.id,
+        email: user.email
+      })
+      
+      console.log('Upload response:', uploadResponse)
+
+      if (!uploadResponse || !uploadResponse.publicUrl) {
+        throw new Error('Upload successful but no URL returned from server.')
+      }
+
+      const { publicUrl } = uploadResponse
+
+      // 5. Submit Verification Record
+      console.log('Submitting verification record...', { userId: user.id, type: discountType, idImageUrl: publicUrl })
+      
+      const verificationResponse = await authAPI.submitDiscountVerification({
+        userId: user.id,
+        type: discountType as 'student' | 'senior_citizen' | 'pwd',
+        idImageUrl: publicUrl,
+        email: user.email,
+        username: user.username || user.email?.split('@')[0] || 'user',
+        fullName: user.profile?.fullName
+      })
+
+      console.log('Verification response:', verificationResponse)
+      
+      // If we got here, it's successful
+      console.log('Verification record submitted successfully to Server/Database')
+
+      // Optimistically set local status to pending for debugging/UX
+      setDiscountVerification({
+        ...(verificationResponse || {}),
+        status: 'pending',
+        type: discountType as 'student' | 'senior_citizen' | 'pwd',
+      })
+
+      // 6. Refresh Status
+      try {
+        const status = await authAPI.getDiscountVerificationStatus(user.id)
+        console.log('New status fetched:', status)
+        setDiscountVerification(status)
+      } catch (statusErr) {
+        console.warn('Could not fetch new status immediately:', statusErr)
+        setDiscountVerification({
+            status: 'pending',
+            type: discountType as 'student' | 'senior_citizen' | 'pwd',
+            submitted_at: new Date().toISOString()
+        })
+      }
+
+      setDiscountSuccess(true)
+      setDiscountType('')
+      setDiscountFile(null)
+      setImagePreview(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } catch (err: any) {
+      console.error('Discount submission failed:', err)
+      // Display a friendly error message
+      const errorMessage = err.message || 'Failed to submit discount verification. Please try again.'
+      setDiscountError(errorMessage)
+    } finally {
+      setIsDiscountSubmitting(false)
+    }
+  }
 
   // Load buses and ETAs from API
+  useEffect(() => {
+    if (!user?.id) return
+
+    try {
+      const raw = localStorage.getItem('booking_draft')
+      if (!raw) return
+      const draft = JSON.parse(raw)
+      if (!draft || draft.userId !== user.id) return
+
+      if (draft.selectedBus) setSelectedBus(draft.selectedBus)
+      if (draft.selectedDate) setSelectedDate(draft.selectedDate)
+      if (Array.isArray(draft.selectedSeats)) setSelectedSeats(draft.selectedSeats)
+      if (draft.paymentMethod === 'cash' || draft.paymentMethod === 'online') {
+        setPaymentMethod(draft.paymentMethod)
+      }
+      if (typeof draft.isRegularClient === 'boolean') {
+        setIsRegularClient(draft.isRegularClient)
+      }
+      if (draft.discountType === 'student' || draft.discountType === 'senior_citizen' || draft.discountType === 'pwd' || draft.discountType === '') {
+        setDiscountType(draft.discountType)
+      }
+    } catch (err) {
+      console.error('Failed to load booking draft:', err)
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    const draft = {
+      userId: user.id,
+      selectedBus,
+      selectedDate,
+      selectedSeats,
+      paymentMethod,
+      isRegularClient,
+      discountType
+    }
+
+    try {
+      localStorage.setItem('booking_draft', JSON.stringify(draft))
+    } catch (err) {
+      console.error('Failed to save booking draft:', err)
+    }
+  }, [user?.id, selectedBus, selectedDate, selectedSeats, paymentMethod, isRegularClient, discountType])
+
   useEffect(() => {
     const loadBusesAndETAs = async () => {
       try {
         setLoadingBuses(true)
-        setError('')
-
-        // Fetch buses
-        let busResponse
-        try {
-          busResponse = await authAPI.getBuses()
-          if (!busResponse || !Array.isArray(busResponse)) {
-            throw new Error('Invalid bus response format')
-          }
-        } catch (busError) {
-          console.error('Failed to fetch buses:', busError)
-          throw new Error('Failed to fetch bus list')
-        }
-
-        // Fetch ETAs
-        let etaResponse
-        try {
-          etaResponse = await authAPI.getBusETA()
-          if (!etaResponse || !Array.isArray(etaResponse)) {
-            throw new Error('Invalid ETA response format')
-          }
-        } catch (etaError) {
-          console.error('Failed to fetch ETAs:', etaError)
-          throw new Error('Failed to fetch ETA data')
-        }
-
-        // Merge bus and ETA data
-        const mergedBuses = busResponse.map((bus: any) => {
-          const etaData = etaResponse.find((eta: BusETA) => eta.busId === bus.id)
+        // Fetch all buses
+        const busesData = await authAPI.getAllBuses()
+        
+        // Fetch ETAs for all buses
+        const etas = await authAPI.getBusETA()
+        
+        // Merge bus data with ETA data
+        const mergedBuses = busesData.map((bus: any) => {
+          const busEta = etas.find((eta: BusETA) => eta.busId === bus.id)
           return {
-            id: bus.id,
-            bus_number: bus.bus_number,
-            available_seats: bus.available_seats,
-            total_seats: bus.total_seats,
-            route_id: bus.route_id,
-            eta: etaData?.eta,
-            currentLocation: etaData?.currentLocation,
-            route_name: etaData?.route.name
+            ...bus,
+            eta: busEta?.eta,
+            currentLocation: busEta?.currentLocation,
+            route_name: busEta?.route?.name || bus.route_name || bus.route // Handle different API response structures
           }
         })
-
+        
         setBuses(mergedBuses)
-
-        // Validate pre-selected busId
-        const busIdFromUrl = searchParams.get('busId')
-        if (busIdFromUrl && !mergedBuses.find(bus => bus.id === busIdFromUrl)) {
-          setError('Invalid bus selected. Please choose another bus.')
-          setSelectedBus('')
+        
+        // If a busId is in the URL, select it
+        const urlBusId = searchParams.get('busId')
+        if (urlBusId && mergedBuses.some((b: Bus) => b.id === urlBusId)) {
+          setSelectedBus(urlBusId)
         }
-      } catch (error) {
-        console.error('Failed to load buses or ETAs:', error)
-        setError(error instanceof Error ? error.message : 'Failed to load bus information. Using fallback data.')
-        // Fallback to mock data
-        setBuses([
-          {
-            id: 'c7c715d0-8195-4308-af1c-78b88f150cf4',
-            bus_number: 'BUS001',
-            available_seats: 13,
-            total_seats: 20,
-            route_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-            eta: '15 minutes',
-            currentLocation: { lat: 14.5995, lng: 120.9842 },
-            route_name: 'Downtown Express'
-          },
-          {
-            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-            bus_number: 'BUS002',
-            available_seats: 8,
-            total_seats: 20,
-            route_id: 'f9e8d7c6-b5a4-3210-fedc-ba9876543210',
-            eta: '20 minutes',
-            currentLocation: { lat: 14.6000, lng: 120.9850 },
-            route_name: 'University Line'
-          }
-        ])
+      } catch (err) {
+        console.error('Failed to load buses:', err)
+        setError('Failed to load available buses. Please try again.')
       } finally {
         setLoadingBuses(false)
       }
@@ -128,6 +286,73 @@ export default function BookingPage() {
 
     loadBusesAndETAs()
   }, [searchParams])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    let active = true
+
+    const loadDiscountStatus = async () => {
+      try {
+        console.log('Loading discount status for user:', user.id)
+        setLoadingDiscount(true)
+        const status = await authAPI.getDiscountVerificationStatus(user.id)
+        console.log('Discount status API response:', status)
+        if (active) {
+          setDiscountVerification(status)
+          if (status && status.status !== 'pending') {
+            setDiscountSuccess(false)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load discount status:', err)
+      } finally {
+        if (active) {
+          setLoadingDiscount(false)
+        }
+      }
+    }
+
+    loadDiscountStatus()
+
+    return () => {
+      active = false
+    }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel(`discount_verifications_user_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'discount_verifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        async () => {
+          try {
+            console.log('Realtime discount change detected for user:', user.id)
+            const status = await authAPI.getDiscountVerificationStatus(user.id)
+            console.log('Discount status after realtime event:', status)
+            setDiscountVerification(status)
+            if (status && status.status !== 'pending') {
+              setDiscountSuccess(false)
+            }
+          } catch (err) {
+            console.error('Failed to refresh discount status after realtime update:', err)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id])
 
   const hashString = (str: string) => {
     let h = 0
@@ -181,6 +406,7 @@ export default function BookingPage() {
         const successfulBookings = bookingResults.filter(result => result && result.id)
 
         if (successfulBookings.length === selectedSeats.length) {
+          localStorage.removeItem('booking_draft')
           setBookingSuccess(true)
           setBookingData(successfulBookings[0])
         } else {
@@ -222,7 +448,12 @@ export default function BookingPage() {
   }
 
   const selectedBusData = buses.find(bus => bus.id === selectedBus)
-  const totalPrice = selectedBusData ? 15 * selectedSeats.length : 0
+  const isDiscounted = discountVerification?.status === 'approved' && !isRegularClient
+  const basePricePerSeat = 15
+  const baseTotalPrice = selectedBusData ? basePricePerSeat * selectedSeats.length : 0
+  const discountPercent = isDiscounted ? 20 : 0
+  const discountAmount = baseTotalPrice * (discountPercent / 100)
+  const totalPrice = baseTotalPrice - discountAmount
 
   useEffect(() => {
     const total = selectedBusData?.total_seats || 0
@@ -281,7 +512,11 @@ export default function BookingPage() {
     receipt.push(`Date: ${selectedDate || 'N/A'}`)
     receipt.push(`Seats: ${selectedSeats.join(', ')}`)
     receipt.push(`Status: ${bookingData.status || 'N/A'}`)
-    receipt.push(`Total: $${totalPrice} (≈ ₱${(totalPrice * USD_TO_PHP).toFixed(2)} PHP)`)
+    receipt.push(`Base Total: $${baseTotalPrice.toFixed(2)} (≈ ₱${(baseTotalPrice * USD_TO_PHP).toFixed(2)} PHP)`)
+    if (discountPercent > 0 && discountAmount > 0) {
+      receipt.push(`Discount (${discountPercent}%): -$${discountAmount.toFixed(2)} (≈ ₱${(discountAmount * USD_TO_PHP).toFixed(2)} PHP)`)
+    }
+    receipt.push(`Total: $${totalPrice.toFixed(2)} (≈ ₱${(totalPrice * USD_TO_PHP).toFixed(2)} PHP)`)
     const blob = new Blob([receipt.join('\n')], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -468,33 +703,132 @@ export default function BookingPage() {
               Select Seats (Max 4)
             </h3>
 
-            {/* Payment Method Selection */}
-            <div className="mb-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Payment Method</h4>
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2 cursor-pointer">
+            {/* Discount Status Section */}
+            <div className="mb-4 p-3 rounded-xl border border-blue-100 bg-blue-50">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-semibold text-blue-800 flex items-center">
+                  <Star className="mr-1.5 text-blue-500" size={16} />
+                  Discount Program
+                </h4>
+                {(loadingDiscount || isDiscountSubmitting) && (
+                  <div className="w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
+                )}
+              </div>
+              
+              {/* Debug: show raw discount status */}
+              <div className="mb-2 text-[10px] text-gray-500">
+                Debug status:{' '}
+                {loadingDiscount
+                  ? 'loading...'
+                  : discountVerification?.status || 'none'}
+              </div>
+              
+              <div className="mb-2">
+                <label className="inline-flex items-center text-xs text-blue-800">
                   <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={paymentMethod === 'cash'}
-                    onChange={() => setPaymentMethod('cash')}
-                    className="form-radio text-pink-500"
+                    type="checkbox"
+                    checked={isRegularClient}
+                    onChange={(e) => setIsRegularClient(e.target.checked)}
+                    className="mr-2"
                   />
-                  <span className="text-sm text-gray-700">Cash Payment</span>
-                </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="online"
-                    checked={paymentMethod === 'online'}
-                    onChange={() => setPaymentMethod('online')}
-                    className="form-radio text-pink-500"
-                  />
-                  <span className="text-sm text-gray-700">Online Payment (Credit/Debit Card)</span>
+                  <span>I am a regular client and do not want to apply a discount now.</span>
                 </label>
               </div>
+
+              {!isRegularClient && (
+                <>
+                  {discountSuccess && (
+                    <div className="mb-3 p-2 bg-green-50 text-green-700 rounded border border-green-100 flex items-start animate-pulse">
+                      <Check className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xs">ID uploaded successfully!</span>
+                        <span className="text-xs mt-0.5">Waiting for verification...</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {discountError && (
+                    <div className="mb-3 p-2 bg-red-50 text-red-700 rounded border border-red-100 flex items-start">
+                      <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs">{discountError}</span>
+                    </div>
+                  )}
+
+                  {!discountVerification || discountVerification.status === 'none' || discountVerification.status === 'rejected' ? (
+                    <div className="text-xs text-blue-700">
+                      {discountVerification?.status === 'rejected' && (
+                        <div className="mb-3 p-2 bg-red-50 text-red-700 rounded border border-red-100">
+                          <p className="font-semibold">Previous verification rejected</p>
+                          {discountVerification.rejection_reason && <p>Reason: {discountVerification.rejection_reason}</p>}
+                        </div>
+                      )}
+                      
+                      <p className="mb-2">Students, Senior Citizens, and Persons with Disability (PWD) are eligible for a 20% discount. Upload your ID to verify.</p>
+                      
+                      <div className="space-y-3 mt-2">
+                        <div>
+                          <select
+                            value={discountType}
+                            onChange={(e) => setDiscountType(e.target.value as any)}
+                            className="w-full p-2 text-xs border border-blue-200 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                            required
+                          >
+                            <option value="">Select Type</option>
+                            <option value="student">Student</option>
+                            <option value="senior_citizen">Senior Citizen</option>
+                            <option value="pwd">PWD</option>
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
+                            required
+                          />
+                          {imagePreview && (
+                            <div className="mt-2">
+                              <p className="text-xs text-gray-500 mb-1">Preview:</p>
+                              <img 
+                                src={imagePreview} 
+                                alt="ID Preview" 
+                                className="h-32 object-contain border border-gray-200 rounded-lg bg-gray-50" 
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleDiscountSubmit}
+                          disabled={isDiscountSubmitting || !discountType || !discountFile}
+                          className="w-full py-1.5 px-3 bg-blue-600 text-white rounded-lg font-semibold text-xs hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center"
+                        >
+                          {isDiscountSubmitting ? (
+                            <>
+                              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                              Submitting...
+                            </>
+                          ) : 'Submit ID for Verification'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : discountVerification.status === 'pending' ? (
+                    <div className="text-xs text-blue-700 flex items-center">
+                      <Clock className="mr-1.5" size={14} />
+                      Status: waiting for verification...
+                    </div>
+                  ) : discountVerification.status === 'approved' ? (
+                    <div className="text-xs text-green-700 flex items-center">
+                      <Check className="mr-1.5" size={14} />
+                      Your discount is approved. 20% {discountVerification.type.replace('_', ' ')} discount applied!
+                    </div>
+                  ) : null}
+                </>
+              )}
             </div>
             
             <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
@@ -558,11 +892,27 @@ export default function BookingPage() {
                 <span className="text-xs sm:text-sm">Date:</span>
                 <span className="font-semibold text-xs sm:text-sm lg:text-base">{selectedDate}</span>
               </div>
-              <div className="border-t border-pink-300 pt-2">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm sm:text-base lg:text-lg">
-                  <span>Total:</span>
+              <div className="border-t border-pink-300 pt-2 space-y-1">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs sm:text-sm lg:text-base opacity-90">
+                  <span>Base Total:</span>
+                  <span className="font-semibold">
+                    ${baseTotalPrice.toFixed(2)}
+                    <span className="ml-1">≈ ₱{(baseTotalPrice * USD_TO_PHP).toFixed(2)}</span>
+                  </span>
+                </div>
+                {discountPercent > 0 && discountAmount > 0 && (
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs sm:text-sm lg:text-base">
+                    <span>Discount ({discountPercent}%):</span>
+                    <span className="font-semibold">
+                      -${discountAmount.toFixed(2)}
+                      <span className="ml-1">≈ ₱{(discountAmount * USD_TO_PHP).toFixed(2)}</span>
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm sm:text-base lg:text-lg mt-1">
+                  <span>Total to pay:</span>
                   <span className="font-bold">
-                    ${totalPrice}
+                    ${totalPrice.toFixed(2)}
                     <span className="ml-2 font-semibold">≈ ₱{(totalPrice * USD_TO_PHP).toFixed(2)}</span>
                   </span>
                 </div>

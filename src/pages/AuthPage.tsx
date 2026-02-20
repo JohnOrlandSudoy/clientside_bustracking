@@ -308,7 +308,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-white px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 overflow-y-auto">
       <div className="w-full max-w-md mx-auto">
         {/* Header */}
         <div className="text-center mb-4 sm:mb-6 lg:mb-8">
@@ -316,7 +316,7 @@ export default function AuthPage() {
             <User className="text-white" size={28} />
           </div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
-            {isLogin ? 'Welcome Back' : 'Create Client Account'}
+            {isLogin ? 'Welcome Back' : 'Create account'}
           </h1>
           <p className="text-xs sm:text-sm lg:text-base text-gray-600 px-1 sm:px-2">
             {isLogin ? 'Sign in to track your buses' : 'Join us as a client for better commuting'}
@@ -565,7 +565,7 @@ export default function AuthPage() {
                   {recoveryActive ? 'Updating Password...' : isResetMode ? (!otpSent ? 'Sending Code...' : !otpVerified ? 'Verifying Code...' : 'Ready') : isLogin ? 'Signing In...' : 'Creating Client Account...'}
                 </div>
               ) : (
-                recoveryActive ? 'Update Password' : isResetMode ? (!otpSent ? 'Send OTP' : !otpVerified ? 'Verify Code' : 'Update Password') : isLogin ? 'Sign In' : 'Create Client Account'
+                recoveryActive ? 'Update Password' : isResetMode ? (!otpSent ? 'Send OTP' : !otpVerified ? 'Verify Code' : 'Update Password') : isLogin ? 'Sign In' : 'Create Account'
               )}
             </button>
             {!recoveryActive && (
