@@ -4,6 +4,7 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, UserCheck } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { supabase, getAuthRedirectUrl } from '../lib/supabase'
 import { authAPI } from '../lib/api'
+import EmailConfirmationModal from '../components/EmailConfirmationModal'
 
 export default function AuthPage() {
   const { user, signUp, signIn, loading, isInitialized, forceReset, shouldRedirect, clearRedirectFlag, googleSignIn } = useAuthAPI()
@@ -189,6 +190,33 @@ export default function AuthPage() {
           setIsSubmitting(false)
         }
         return
+      }
+
+      // Check if user exists before attempting login/signup
+      if (formData.email) {
+        try {
+          const { data: existingUser, error: checkError } = await supabase
+            .from('users')
+            .select('email')
+            .eq('email', formData.email)
+            .maybeSingle()
+
+          if (!checkError) {
+            if (isLogin && !existingUser) {
+              setError('Account not registered')
+              setIsSubmitting(false)
+              return
+            }
+
+            if (!isLogin && existingUser) {
+              setError('Account already exists')
+              setIsSubmitting(false)
+              return
+            }
+          }
+        } catch (err) {
+          console.error('Error checking user existence:', err)
+        }
       }
 
       let result
@@ -645,44 +673,15 @@ export default function AuthPage() {
 
         {/* Email Confirmation Section */}
         {emailConfirmation && (
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-green-100 mt-4 sm:mt-6">
-            <div className="text-center">
-              <div className="bg-gradient-to-r from-green-500 to-green-400 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Mail className="text-white" size={32} />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">
-                Please Confirm Your Email
-              </h2>
-              <p className="text-sm sm:text-base text-gray-600 mb-4 px-2">
-                We've sent a confirmation email to <span className="text-green-600 font-semibold">{formData.email}</span>
-              </p>
-              <div className="bg-green-50 border border-green-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
-                <p className="text-green-700 text-sm">
-                  📧 Check your inbox and click the confirmation link to activate your account.
-                </p>
-              </div>
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailConfirmation(false)
-                    setIsLogin(true)
-                    resetForm()
-                  }}
-                  className="w-full bg-gradient-to-r from-green-500 to-green-400 text-white py-3 sm:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200 text-base"
-                >
-                  Continue to Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEmailConfirmation(false)}
-                  className="w-full bg-gray-100 text-gray-700 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200 text-base"
-                >
-                  Back to Sign Up
-                </button>
-              </div>
-            </div>
-          </div>
+          <EmailConfirmationModal
+            email={formData.email}
+            onContinue={() => {
+              setEmailConfirmation(false)
+              setIsLogin(true)
+              resetForm()
+            }}
+            onClose={() => setEmailConfirmation(false)}
+          />
         )}
 
         {/* Debug Section - Only show in development */}
