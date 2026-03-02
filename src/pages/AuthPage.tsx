@@ -241,6 +241,9 @@ export default function AuthPage() {
         // Show email confirmation only if no token was returned (meaning confirmation is required)
         if (!result.data.token) {
           setEmailConfirmation(true)
+          // Store email in localStorage to show success modal after confirmation
+          localStorage.setItem('signup_pending_confirmation', 'true')
+          localStorage.setItem('signup_email', formData.email)
         }
       }
   } catch {

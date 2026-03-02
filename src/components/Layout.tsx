@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import BottomNavigation from './BottomNavigation'
 import NotificationBell from './NotificationBell'
+import RegistrationSuccessModal from './RegistrationSuccessModal'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { useState, useEffect } from 'react'
 import { Menu, Home, Bell, LogOut, ClipboardList } from 'lucide-react'
@@ -23,6 +24,26 @@ export default function Layout() {
   interface OrderItem { id: string; route?: string; status?: string; date?: string }
   const [pendingOrders, setPendingOrders] = useState<OrderItem[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [signupEmail, setSignupEmail] = useState('')
+
+  useEffect(() => {
+    if (user) {
+      const isPending = localStorage.getItem('signup_pending_confirmation')
+      const email = localStorage.getItem('signup_email') || user.email || ''
+      
+      if (isPending === 'true') {
+        setSignupEmail(email)
+        setShowSuccessModal(true)
+      }
+    }
+  }, [user])
+
+  const handleCloseSuccessModal = () => {
+    setShowSuccessModal(false)
+    localStorage.removeItem('signup_pending_confirmation')
+    localStorage.removeItem('signup_email')
+  }
 
   useEffect(() => {
     let active = true
@@ -176,6 +197,13 @@ export default function Layout() {
       </main>
       
       <BottomNavigation />
+      
+      {showSuccessModal && (
+        <RegistrationSuccessModal 
+          email={signupEmail} 
+          onClose={handleCloseSuccessModal} 
+        />
+      )}
     </div>
   )
 }
