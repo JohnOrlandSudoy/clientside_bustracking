@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
 import { authAPI, BusETA } from '../lib/api';
+import { normalizeLatLng } from '../utils/location';
 
 // Define types
 export interface Terminal {
@@ -99,11 +100,6 @@ export function BusTrackingProvider({ children }: { children: ReactNode }) {
       
       if (response && Array.isArray(response)) {
         dispatch({ type: 'SET_BUSES', payload: response });
-        
-        // Select first bus if none is selected
-        if (!state.selectedBusId && response.length > 0) {
-          dispatch({ type: 'SELECT_BUS', payload: response[0].id });
-        }
       } else {
         throw new Error('Invalid response format');
       }
@@ -132,10 +128,6 @@ export function BusTrackingProvider({ children }: { children: ReactNode }) {
       ];
       
       dispatch({ type: 'SET_BUSES', payload: fallbackBuses });
-      
-      if (!state.selectedBusId) {
-        dispatch({ type: 'SELECT_BUS', payload: fallbackBuses[0].id });
-      }
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -146,57 +138,57 @@ export function BusTrackingProvider({ children }: { children: ReactNode }) {
     try {
       dispatch({ type: 'SET_ERROR', payload: null });
       
-      // Fetch ETAs
       const etaResponse = await authAPI.getBusETA();
       if (etaResponse && Array.isArray(etaResponse)) {
-        dispatch({ type: 'SET_ETAS', payload: etaResponse });
+        dispatch({
+          type: 'SET_ETAS',
+          payload: etaResponse.map((eta) => ({
+            ...eta,
+            currentLocation: normalizeLatLng(eta.currentLocation),
+            locationSource: eta.locationSource ?? (eta.currentLocation ? 'database' : null),
+          })),
+        });
       } else {
         throw new Error('Invalid ETA response format');
       }
-      
-      // Set default terminals since there's no API endpoint for terminals
-      // In a real application, this would come from an API
-      dispatch({ type: 'SET_TERMINALS', payload: [
-        {
-          id: '11111111-2222-3333-4444-555555555555',
-          name: 'Downtown Terminal',
-          location: { lat: 14.5980, lng: 120.9830 }
-        },
-        {
-          id: '66666666-7777-8888-9999-000000000000',
-          name: 'Suburb Terminal',
-          location: { lat: 14.6010, lng: 120.9860 }
+
+      const terminalsResponse = await authAPI.getTerminals();
+      if (terminalsResponse && Array.isArray(terminalsResponse)) {
+        const normalized = terminalsResponse
+          .filter((t: { location?: { lat: number; lng: number }; lat?: number; lng?: number }) => {
+            if (t.location?.lat != null && t.location?.lng != null) return true;
+            return typeof t.lat === 'number' && typeof t.lng === 'number';
+          })
+          .map((t: { id: string; name: string; location?: { lat: number; lng: number }; lat?: number; lng?: number }) => ({
+            id: t.id,
+            name: t.name,
+            location: t.location || { lat: t.lat as number, lng: t.lng as number },
+          }));
+        if (normalized.length > 0) {
+          dispatch({ type: 'SET_TERMINALS', payload: normalized });
         }
-      ]});
+      }
     } catch (error) {
       console.error('Failed to load ETAs or terminals:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load bus ETAs or terminal data. Please try again.' });
-      
-      // Set fallback data for terminals
-      dispatch({ type: 'SET_TERMINALS', payload: [
-        {
-          id: '11111111-2222-3333-4444-555555555555',
-          name: 'Downtown Terminal',
-          location: { lat: 14.5980, lng: 120.9830 }
-        },
-        {
-          id: '66666666-7777-8888-9999-000000000000',
-          name: 'Suburb Terminal',
-          location: { lat: 14.6010, lng: 120.9860 }
-        }
-      ]});
     }
   };
 
-  // Refresh ETAs
-  const refreshETAs = async () => {
+  const refreshETAs = useCallback(async () => {
     try {
       dispatch({ type: 'SET_REFRESHING', payload: true });
       dispatch({ type: 'SET_ERROR', payload: null });
-      
+
       const response = await authAPI.getBusETA();
       if (response && Array.isArray(response)) {
-        dispatch({ type: 'SET_ETAS', payload: response });
+        dispatch({
+          type: 'SET_ETAS',
+          payload: response.map((eta) => ({
+            ...eta,
+            currentLocation: normalizeLatLng(eta.currentLocation),
+            locationSource: eta.locationSource ?? (eta.currentLocation ? 'database' : null),
+          })),
+        });
       } else {
         throw new Error('Invalid ETA response format');
       }
@@ -206,12 +198,11 @@ export function BusTrackingProvider({ children }: { children: ReactNode }) {
     } finally {
       dispatch({ type: 'SET_REFRESHING', payload: false });
     }
-  };
+  }, []);
 
-  // Select a bus
-  const selectBus = (busId: string) => {
+  const selectBus = useCallback((busId: string) => {
     dispatch({ type: 'SELECT_BUS', payload: busId });
-  };
+  }, []);
 
   return (
     <BusTrackingContext.Provider value={{ state, dispatch, refreshETAs, selectBus }}>

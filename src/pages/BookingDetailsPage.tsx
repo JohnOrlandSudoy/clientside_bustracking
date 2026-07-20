@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Copy, CheckCircle, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Copy, CheckCircle, AlertTriangle, Navigation } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { authAPI } from '../lib/api'
 
 interface RawBooking {
   id: string
+  bus_id?: string
   status?: string
   payment_status?: string
   payment_method?: string
@@ -14,7 +15,7 @@ interface RawBooking {
   seats?: number[]
   amount?: number | string
   receipt_sent?: boolean
-  bus?: { bus_number?: string; route?: { name?: string } }
+  bus?: { id?: string; bus_number?: string; route?: { name?: string } }
 }
 
 export default function BookingDetailsPage() {
@@ -62,6 +63,7 @@ export default function BookingDetailsPage() {
 
   const paid = booking?.payment_status === 'paid'
   const confirmed = booking?.status === 'confirmed'
+  const trackBusId = booking?.bus_id ?? booking?.bus?.id
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto">
@@ -159,6 +161,17 @@ export default function BookingDetailsPage() {
                   </div>
                 </div>
               </div>
+
+              {trackBusId && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/tracker/${trackBusId}?pickup=1`)}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-pink-400 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                >
+                  <Navigation size={18} />
+                  Track my pickup
+                </button>
+              )}
             </div>
           </div>
         </div>

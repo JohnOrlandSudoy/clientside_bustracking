@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Calendar, MapPin, Users, CreditCard, Check, AlertCircle, Clock, Star } from 'lucide-react'
+import { Calendar, MapPin, Users, CreditCard, Check, AlertCircle, Clock, Star, Navigation } from 'lucide-react'
 import { useAuthAPI } from '../hooks/useAuthAPI'
 import { authAPI, BusETA } from '../lib/api'
 import { supabase } from '../lib/supabase'
@@ -50,6 +50,7 @@ export default function BookingPage() {
   const [isRegularClient, setIsRegularClient] = useState(false)
   const USD_TO_PHP = 58.74
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const bookingSubmitLock = React.useRef(false)
 
   const formatRouteName = (name?: string | null) => {
     if (!name) return 'Unknown Route'
@@ -389,37 +390,34 @@ export default function BookingPage() {
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (bookingSubmitLock.current || isSubmitting) return
     if (!selectedBus || !selectedDate || selectedSeats.length === 0 || !user) {
       setError('Please select a bus, date, and at least one seat.')
       return
     }
 
+    bookingSubmitLock.current = true
     setIsSubmitting(true)
     setError('')
 
     try {
       if (paymentMethod === 'cash') {
-        // Create bookings (one per seat) using existing endpoint
-        const bookingPromises = selectedSeats.map(async (seatNumber) => {
-          const bookingData = {
-            userId: user.id,
-            busId: selectedBus,
-            seat_number: seatNumber
-          }
-
-          console.log('Creating booking (cash):', bookingData)
-          return await authAPI.createBooking(bookingData)
+        const bookingResult = await authAPI.createBooking({
+          userId: user.id,
+          busId: selectedBus,
+          seats: selectedSeats,
+          travel_date: selectedDate,
+          email: user.email,
+          payment_method: 'cash',
+          amount: totalPrice,
         })
 
-        const bookingResults = await Promise.all(bookingPromises)
-        const successfulBookings = bookingResults.filter(result => result && result.id)
-
-        if (successfulBookings.length === selectedSeats.length) {
+        if (bookingResult?.id) {
           localStorage.removeItem('booking_draft')
           setBookingSuccess(true)
-          setBookingData(successfulBookings[0])
+          setBookingData(bookingResult)
         } else {
-          setError(`Failed to book ${selectedSeats.length - successfulBookings.length} seats. Please try again.`)
+          setError('Booking failed. Please try again.')
         }
       } else {
         // Online payment: create a Stripe Checkout session on the backend
@@ -452,6 +450,7 @@ export default function BookingPage() {
         setError('Booking failed. Please check your connection and try again.')
       }
     } finally {
+      bookingSubmitLock.current = false
       setIsSubmitting(false)
     }
   }
@@ -538,13 +537,13 @@ export default function BookingPage() {
   }
 
   useEffect(() => {
-    if (bookingSuccess) {
+    if (bookingSuccess && selectedBus) {
       const t = setTimeout(() => {
-        navigate('/booking')
-      }, 4000)
+        navigate(`/tracker/${selectedBus}?pickup=1&fromBooking=1`)
+      }, 5000)
       return () => clearTimeout(t)
     }
-  }, [bookingSuccess, navigate])
+  }, [bookingSuccess, selectedBus, navigate])
 
   if (bookingSuccess) {
     return (
@@ -555,7 +554,7 @@ export default function BookingPage() {
           </div>
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-3 sm:mb-4">Booking Confirmed!</h1>
           <p className="text-xs sm:text-sm lg:text-base text-gray-600 mb-4 sm:mb-6 px-2">
-            Your seats have been successfully reserved
+            Your seats are reserved. Track your bus on the map as it heads to your pickup point.
           </p>
           <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-green-100 mb-4 sm:mb-6">
             <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-sm sm:text-base lg:text-lg">Booking Details</h3>
@@ -610,18 +609,35 @@ export default function BookingPage() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => {
-              setBookingSuccess(false)
-              setSelectedBus('')
-              setSelectedDate('')
-              setSelectedSeats([])
-              setBookingData(null)
-            }}
-            className="bg-gradient-to-r from-pink-500 to-pink-400 text-white px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 rounded-xl font-semibold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-xs sm:text-sm lg:text-base touch-target"
-          >
-            Book Another Trip
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
+            {selectedBus && (
+              <button
+                type="button"
+                onClick={() => navigate(`/tracker/${selectedBus}?pickup=1&fromBooking=1`)}
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-500 to-pink-400 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all touch-target"
+              >
+                <Navigation size={18} />
+                Track my bus now
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setBookingSuccess(false)
+                setSelectedBus('')
+                setSelectedDate('')
+                setSelectedSeats([])
+                setBookingData(null)
+              }}
+              className="bg-white border-2 border-pink-200 text-pink-600 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl font-semibold hover:bg-pink-50 transition-all text-xs sm:text-sm touch-target"
+            >
+              Book another trip
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-4 flex items-center justify-center gap-1">
+            <Clock size={12} />
+            Opening live map in a few seconds…
+          </p>
         </div>
       </div>
     )

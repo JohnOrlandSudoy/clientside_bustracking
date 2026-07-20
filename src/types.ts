@@ -17,6 +17,7 @@ export interface BusETA {
     lat: number;
     lng: number;
   } | null;
+  locationSource?: 'employee_live' | 'database' | null;
   route: {
     name: string;
     start_terminal_id: string;
@@ -31,6 +32,9 @@ export interface Terminal {
     lat: number;
     lng: number;
   };
+  address?: string;
+  formatted_address?: string | null;
+  map_verified?: boolean;
 }
 
 export interface Notification {

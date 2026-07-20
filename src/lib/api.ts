@@ -1,4 +1,6 @@
 // API service for authentication
+import { normalizeLatLng } from '../utils/location';
+
 // Prefer using VITE_API_BASE_URL in your environment. If not set, default to localhost:3000
 // NOTE: Your backend in production or Render may be accessible at a custom host/port —
 // set VITE_API_BASE_URL accordingly (example: https://backendbus-sumt.onrender.com:3000/api)
@@ -381,9 +383,14 @@ class AuthAPI {
   // Additional API methods for bus tracking, booking, and feedback
   async getBuses(): Promise<any> {
     try {
-      return await this.makeRequest('/admin/buses', { method: 'GET' });
+      return await this.makeRequest('/client/buses', { method: 'GET' });
     } catch (error) {
-      console.warn('Admin buses endpoint not available, using mock data');
+      console.warn('Client buses endpoint not available, trying admin buses');
+      try {
+        return await this.makeRequest('/admin/buses', { method: 'GET' });
+      } catch {
+        console.warn('Admin buses endpoint not available, using mock data');
+      }
       // Return mock bus data
       return [
         {
@@ -434,7 +441,12 @@ class AuthAPI {
   async getBusETA(busId?: string): Promise<BusETA[]> {
     try {
       const response = await this.makeRequest<BusETA[]>('/client/bus-eta', { method: 'GET' })
-      return busId ? response.filter(eta => eta.busId === busId) : response
+      const normalized = (Array.isArray(response) ? response : []).map((eta) => ({
+        ...eta,
+        currentLocation: normalizeLatLng(eta.currentLocation),
+        locationSource: eta.locationSource ?? (eta.currentLocation ? 'database' : null),
+      }))
+      return busId ? normalized.filter((eta) => eta.busId === busId) : normalized
     } catch (error) {
       console.warn(`Failed to get ETA${busId ? ` for bus ${busId}` : ' for all buses'}, using mock data:`, error)
       
@@ -477,7 +489,16 @@ class AuthAPI {
   // Terminals endpoint - some deployments may not provide this, so fallback
   async getTerminals(): Promise<any> {
     try {
-      return await this.makeRequest('/admin/terminals', { method: 'GET' });
+      const raw = await this.makeRequest<any[]>('/admin/terminals', { method: 'GET' });
+      if (!Array.isArray(raw)) return raw;
+      return raw.map((t) => ({
+        ...t,
+        location:
+          t.location ||
+          (typeof t.lat === 'number' && typeof t.lng === 'number'
+            ? { lat: t.lat, lng: t.lng }
+            : undefined),
+      }));
     } catch (error) {
       console.warn('Terminals endpoint not available, using fallback terminals');
       return [
@@ -498,6 +519,15 @@ class AuthAPI {
   async createBooking(bookingData: {
     userId: string
     busId: string
+    seats?: number[]
+    travel_date?: string
+    email?: string
+    payment_method?: 'cash' | 'online'
+    amount?: number
+    pickup_address?: string
+    pickup_lat?: number
+    pickup_lng?: number
+    pickup_location_source?: string
   }): Promise<any> {
     try {
       return await this.makeRequest('/client/booking', {
@@ -527,6 +557,22 @@ class AuthAPI {
       console.warn('Create payment session endpoint not available, error:', error);
       throw error;
     }
+  }
+
+  async updateBookingPickup(
+    bookingId: string,
+    payload: {
+      userId?: string
+      pickup_address: string
+      pickup_lat: number
+      pickup_lng: number
+      pickup_location_source: 'gps' | 'search' | 'manual' | 'approximate'
+    }
+  ): Promise<any> {
+    return await this.makeRequest(`/client/booking/${bookingId}/pickup`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
   }
 
   async getUserBookings(userId?: string): Promise<any> {
