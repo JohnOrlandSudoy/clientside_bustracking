@@ -81,18 +81,18 @@ export default function Layout() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-white pb-28 sm:pb-24">
       {/* Header with Notification Bell */}
       {user && (
-        <header className="fixed top-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-b border-pink-100 shadow-sm">
+        <header className="fixed top-0 left-0 right-0 z-[5000] bg-white/95 backdrop-blur-md border-b border-pink-100 shadow-sm">
           <div className="max-w-lg mx-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 flex items-center justify-between">
             <div className="flex items-center">
               <img src="/AuroRide.jpg" alt="AuroRide" className="h-10 w-10 rounded-lg object-cover mr-3 shadow-sm" />
               <h1 className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">Auro Ride</h1>
             </div>
             <div className="flex items-center gap-2 relative">
-              {/* Orders icon with badge */}
+              {/* Trips icon with badge */}
               <button
                 className="p-2 rounded-lg hover:bg-pink-50 active:scale-95 transition relative"
                 onClick={() => setOrdersOpen((v) => !v)}
-                aria-label="View orders"
+                aria-label="View trips"
               >
                 <span className="relative inline-flex">
                   <ClipboardList size={20} />
@@ -108,20 +108,20 @@ export default function Layout() {
                   <div className="px-3 py-2 border-b">
                     <div className="flex items-center gap-2 text-gray-800">
                       <ClipboardList size={16} />
-                      <span className="text-sm font-semibold">Orders</span>
+                      <span className="text-sm font-semibold">Trips</span>
                     </div>
                   </div>
                   <div className="max-h-64 overflow-auto">
                     {ordersLoading ? (
-                      <div className="px-3 py-3 text-xs text-gray-600">Loading orders…</div>
+                      <div className="px-3 py-3 text-xs text-gray-600">Loading trips…</div>
                     ) : pendingOrders.length === 0 ? (
-                      <div className="px-3 py-3 text-xs text-gray-600">No pending orders</div>
+                      <div className="px-3 py-3 text-xs text-gray-600">No pending trips</div>
                     ) : (
                       pendingOrders.slice(0, 5).map((o) => (
                         <button
                           key={o.id}
                           className="w-full text-left px-3 py-2 hover:bg-pink-50"
-                          onClick={() => { setOrdersOpen(false); navigate(`/orders/${o.id}`) }}
+                          onClick={() => { setOrdersOpen(false); navigate(`/trips/${o.id}`) }}
                         >
                           <div className="text-sm font-medium text-gray-800 truncate">{o.route}</div>
                           <div className="text-xs text-gray-500">
@@ -136,7 +136,7 @@ export default function Layout() {
                       className="w-full text-sm bg-pink-50 hover:bg-pink-100 text-pink-700 px-3 py-2 rounded-lg"
                       onClick={() => { setOrdersOpen(false); navigate('/profile') }}
                     >
-                      View all
+                      View all trips
                     </button>
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function Layout() {
               )}
               {(open || ordersOpen) && (
                 <div
-                  className="fixed inset-0 z-40"
+                  className="fixed inset-0 z-[4900]"
                   onClick={() => { setOpen(false); setOrdersOpen(false); }}
                 />
               )}

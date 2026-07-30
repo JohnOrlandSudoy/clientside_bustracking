@@ -72,7 +72,7 @@ export default function BookingDetailsPage() {
           <ArrowLeft size={20} />
         </button>
         <div className="text-right">
-          <div className="text-lg font-bold text-gray-800">Booking Details</div>
+          <div className="text-lg font-bold text-gray-800">Trip Details</div>
           <div className="text-sm text-gray-500">{id}</div>
         </div>
       </div>
@@ -80,12 +80,12 @@ export default function BookingDetailsPage() {
       {loading ? (
         <div className="text-center py-16">
           <div className="w-8 h-8 border-2 border-pink-200 border-t-pink-600 rounded-full animate-spin mx-auto mb-3"></div>
-          <div className="text-gray-500">Loading booking...</div>
+          <div className="text-gray-500">Loading trip...</div>
         </div>
       ) : !booking ? (
         <div className="text-center py-16">
           <AlertTriangle size={32} className="mx-auto mb-3 text-red-400" />
-          <div className="text-gray-700 font-medium">Booking not found</div>
+          <div className="text-gray-700 font-medium">Trip not found</div>
           <div className="text-gray-500 text-sm">Please go back and try again</div>
         </div>
       ) : (

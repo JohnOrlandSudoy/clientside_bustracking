@@ -161,3 +161,51 @@
   }
 }
 
+/* Keep Leaflet map layers below fixed app chrome while scrolling */
+.auroride-map-shell {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.auroride-map-shell .leaflet-container {
+  z-index: 0 !important;
+}
+
+.auroride-map-shell .leaflet-pane,
+.auroride-map-shell .leaflet-top,
+.auroride-map-shell .leaflet-bottom,
+.auroride-map-shell .leaflet-control {
+  z-index: auto;
+}
+
+.auroride-map-shell .leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.auroride-map-shell .leaflet-overlay-pane {
+  z-index: 2 !important;
+}
+
+.auroride-map-shell .leaflet-shadow-pane {
+  z-index: 3 !important;
+}
+
+.auroride-map-shell .leaflet-marker-pane {
+  z-index: 4 !important;
+}
+
+.auroride-map-shell .leaflet-tooltip-pane {
+  z-index: 5 !important;
+}
+
+.auroride-map-shell .leaflet-popup-pane {
+  z-index: 6 !important;
+}
+
+.auroride-map-shell .leaflet-control-container {
+  z-index: 7 !important;
+}
+

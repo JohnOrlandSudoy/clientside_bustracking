@@ -402,16 +402,16 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Recent Bookings */}
+      {/* Recent Trips */}
       <div className="bg-white rounded-2xl p-3 sm:p-4 lg:p-6 shadow-lg border border-pink-100 mb-3 sm:mb-4 lg:mb-6">
         <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-800 mb-3 sm:mb-4 flex items-center">
           <Calendar className="mr-1.5 sm:mr-2 text-pink-500" size={18} />
-          Recent Bookings
+          Recent Trips
         </h3>
         <div className="space-y-2 sm:space-y-3">
           {recentBookings.length > 0 ? (
             recentBookings.map((booking) => (
-              <button key={booking.id} onClick={() => navigate(`/orders/${booking.id}`)} className="text-left w-full flex flex-col sm:flex-row sm:justify-between sm:items-center p-2.5 sm:p-3 lg:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+              <button key={booking.id} onClick={() => navigate(`/trips/${booking.id}`)} className="text-left w-full flex flex-col sm:flex-row sm:justify-between sm:items-center p-2.5 sm:p-3 lg:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
                 <div className="mb-1.5 sm:mb-2 lg:mb-0">
                   <h4 className="font-semibold text-gray-800 text-xs sm:text-sm lg:text-base">{booking.route}</h4>
                   <p className="text-xs sm:text-sm text-gray-600">
@@ -435,8 +435,8 @@ export default function ProfilePage() {
           ) : (
             <div className="text-center py-4 sm:py-6 lg:py-8 text-gray-500">
               <Calendar className="mx-auto mb-2 sm:mb-3 text-gray-300" size={24} />
-              <p className="text-gray-600 mb-1.5 sm:mb-2 text-xs sm:text-sm lg:text-base">No recent bookings</p>
-              <p className="text-xs sm:text-sm text-gray-400">Your booking history will appear here</p>
+              <p className="text-gray-600 mb-1.5 sm:mb-2 text-xs sm:text-sm lg:text-base">No recent trips</p>
+              <p className="text-xs sm:text-sm text-gray-400">Your trip history will appear here</p>
             </div>
           )}
         </div>

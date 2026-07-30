@@ -81,6 +81,15 @@ function AppContent() {
             }
           />
           <Route
+            path="trips/:id"
+            element={
+              <ProtectedRoute>
+                <BookingDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Legacy URL — still opens trip details */}
+          <Route
             path="orders/:id"
             element={
               <ProtectedRoute>

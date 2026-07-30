@@ -507,8 +507,8 @@ const BusMap: React.FC<BusMapProps> = (props) => {
   const displayLocationError = locationError || localLocationError;
 
   return (
-    <div id="bus-map-section" className="mb-6 relative">
-      <div className="relative">
+    <div id="bus-map-section" className="mb-6 relative z-0">
+      <div className="auroride-map-shell relative">
         <ClientOnlyMap
           {...props}
           pickupMode={pickupMode}
@@ -522,7 +522,7 @@ const BusMap: React.FC<BusMapProps> = (props) => {
         />
 
         {pickupMode && !safeUser && (
-          <div className="absolute bottom-4 left-1/2 z-[1100] flex w-[min(100%,20rem)] -translate-x-1/2 flex-col gap-2 px-3">
+          <div className="absolute bottom-4 left-1/2 z-20 flex w-[min(100%,20rem)] -translate-x-1/2 flex-col gap-2 px-3">
             <button
               type="button"
               onClick={() => void triggerRefreshLocation()}
@@ -545,7 +545,7 @@ const BusMap: React.FC<BusMapProps> = (props) => {
         )}
 
         {pickupMode && safeUser && busLocation && (
-          <div className="absolute bottom-4 right-4 z-[1000] rounded-lg bg-white/95 px-3 py-2 text-xs shadow-md border border-gray-200 space-y-1 pointer-events-none">
+          <div className="absolute bottom-4 right-4 z-20 rounded-lg bg-white/95 px-3 py-2 text-xs shadow-md border border-gray-200 space-y-1 pointer-events-none">
             <div className="flex items-center gap-2">
               <span className="inline-block w-3 h-3 rounded-full bg-pink-500" />
               You (device GPS)
@@ -560,7 +560,7 @@ const BusMap: React.FC<BusMapProps> = (props) => {
         <button
           type="button"
           onClick={() => setShowControls(!showControls)}
-          className="absolute top-4 right-4 z-[1100] bg-white p-2 rounded-lg shadow-md border hover:bg-gray-50 transition-colors"
+          className="absolute top-4 right-4 z-20 bg-white p-2 rounded-lg shadow-md border hover:bg-gray-50 transition-colors"
           title="Location controls"
         >
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -570,7 +570,7 @@ const BusMap: React.FC<BusMapProps> = (props) => {
         </button>
 
         {showControls && (
-          <div className="absolute top-16 right-4 z-[1100] w-80 space-y-4">
+          <div className="absolute top-16 right-4 z-20 w-80 space-y-4">
             <div className="bg-white rounded-lg shadow-lg border p-4">
               <h3 className="font-semibold text-gray-800 mb-1">Location Controls</h3>
               <p className="text-xs text-gray-500 mb-3">Map: OpenStreetMap · type address or use GPS</p>

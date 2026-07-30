@@ -215,7 +215,7 @@ export default function NotificationBell() {
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-[4900]"
           onClick={handleToggle}
         />
       )}
